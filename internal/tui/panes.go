@@ -7,6 +7,63 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+const pirateArt = `     _____
+    /     \
+   | () () |
+    \  ^  /
+     |||||
+     |||||
+  _____|_____
+ /___________\
+| SHELL QUEST |
+ \___________/`
+
+func (m Model) welcomeView() string {
+	var b strings.Builder
+	b.WriteString(pirateArt + "\n\n")
+	b.WriteString(TitleStyle.Render("Welcome to Shell Quest!") + "\n\n")
+	b.WriteString("Learn the secrets of the command line\n")
+	b.WriteString("through pirate treasure hunting!\n\n")
+	b.WriteString("Press ENTER to begin your adventure!")
+	return b.String()
+}
+
+func (m Model) adventureLogView() string {
+	var b strings.Builder
+	b.WriteString(TitleStyle.Render("ADVENTURE LOG") + "\n\n")
+	if m.player != nil {
+		b.WriteString(fmt.Sprintf("Pirate: %s (%s)\n\n", m.player.Name, m.player.Tier))
+	}
+	if m.runner != nil && m.runner.IsComplete() {
+		b.WriteString(SuccessStyle.Render("SKULL ISLAND: COMPLETED") + "\n")
+	} else {
+		b.WriteString("Skull Island: In Progress\n")
+		if m.runner != nil {
+			b.WriteString(fmt.Sprintf("  Objective %d of %d\n",
+				m.runner.CurrentObjectiveIndex()+1,
+				len(m.runner.Mission().Objectives)))
+		}
+	}
+	b.WriteString("\n\nPress ESC or Enter to return to the game.")
+	return b.String()
+}
+
+func (m Model) parentModeView() string {
+	var b strings.Builder
+	b.WriteString(TitleStyle.Render("PARENT MODE") + "\n\n")
+
+	if !m.parentUnlocked {
+		b.WriteString(fmt.Sprintf("What is %d + %d?\n\n", m.mathA, m.mathB))
+		b.WriteString("> " + m.mathAnswer + "_\n\n")
+		b.WriteString("Press ESC to cancel.")
+	} else {
+		b.WriteString(SuccessStyle.Render("Access granted!") + "\n\n")
+		b.WriteString("Q - Quit game\n")
+		b.WriteString("ESC - Return to game\n")
+	}
+	return b.String()
+}
+
 func (m Model) gameView() string {
 	if m.width == 0 {
 		// Not yet sized — return minimal view
