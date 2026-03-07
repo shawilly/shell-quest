@@ -70,3 +70,56 @@ func (m Model) shellContent() string {
 
 	return b.String()
 }
+
+func (m Model) profileSelectView() string {
+	var b strings.Builder
+	b.WriteString(TitleStyle.Render("SHELL QUEST - Choose Your Pirate") + "\n\n")
+
+	for i, p := range m.profiles {
+		cursor := "  "
+		if i == m.selectedIdx {
+			cursor = "> "
+		}
+		b.WriteString(fmt.Sprintf("%s%s (%s)\n", cursor, p.Name, p.Tier))
+	}
+
+	// New profile option
+	cursor := "  "
+	if m.selectedIdx == len(m.profiles) {
+		cursor = "> "
+	}
+	b.WriteString(cursor + "[ New Pirate ]\n")
+	b.WriteString("\nUse up/down arrows and Enter to select.")
+	return b.String()
+}
+
+func (m Model) tierSelectView() string {
+	tiers := []struct {
+		name string
+		desc string
+	}{
+		{"Beginner", "Ages 3-6. Commands: ls, cd, pwd, cat, echo, clear, help"},
+		{"Explorer", "Ages 6-8. + mkdir, touch, cp, mv, rm, find"},
+		{"Master", "Ages 8-10. + grep, chmod, man, history, pipes, globs"},
+	}
+	var b strings.Builder
+	b.WriteString(TitleStyle.Render("Choose Your Difficulty, "+m.nameInput) + "\n\n")
+	for i, t := range tiers {
+		cursor := "  "
+		if i == m.selectedIdx {
+			cursor = "> "
+		}
+		b.WriteString(fmt.Sprintf("%s%s\n    %s\n\n", cursor, t.name, t.desc))
+	}
+	b.WriteString("Use up/down arrows and Enter to select.")
+	return b.String()
+}
+
+func (m Model) nameInputView() string {
+	var b strings.Builder
+	b.WriteString(TitleStyle.Render("SHELL QUEST - Enter Your Pirate Name") + "\n\n")
+	b.WriteString("What is your name, young pirate?\n\n")
+	b.WriteString("> " + m.nameInput + "_\n\n")
+	b.WriteString("Press Enter when done.")
+	return b.String()
+}
