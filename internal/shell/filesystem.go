@@ -89,7 +89,39 @@ func (fs *FS) Mkdir(p string, hidden bool) error {
 	return nil
 }
 
+// MkdirAll creates the directory and all missing parent directories.
+func (fs *FS) MkdirAll(p string, hidden bool) error {
+	p = path.Clean(p)
+	if p == "/" {
+		return nil
+	}
+	parts := strings.Split(strings.TrimPrefix(p, "/"), "/")
+	cur := fs.root
+	for _, part := range parts {
+		child, ok := cur.children[part]
+		if !ok {
+			child = &Node{
+				Name:     part,
+				Type:     NodeDir,
+				Hidden:   hidden,
+				children: make(map[string]*Node),
+			}
+			cur.children[part] = child
+		} else if child.Type != NodeDir {
+			return fmt.Errorf("not a directory: %s", part)
+		}
+		cur = child
+	}
+	return nil
+}
+
+// WriteFile creates (or overwrites) a file at p, auto-creating parent dirs.
 func (fs *FS) WriteFile(p, content string, hidden bool) error {
+	p = path.Clean(p)
+	parentPath := path.Dir(p)
+	if err := fs.MkdirAll(parentPath, false); err != nil {
+		return err
+	}
 	parent, name, err := fs.resolveParent(p)
 	if err != nil {
 		return err

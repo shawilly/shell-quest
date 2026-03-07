@@ -28,11 +28,36 @@ func (e *Executor) Execute(input, cwd string) Result {
 		return Result{}
 	}
 	e.History = append(e.History, input)
-	parts := strings.Fields(input)
-	name, args := parts[0], parts[1:]
-	cmd, ok := e.registry[name]
-	if !ok {
-		return Result{Error: name + ": command not found"}
+
+	pipeline := Parse(input, cwd, e.fs)
+	if len(pipeline) == 0 {
+		return Result{}
 	}
-	return cmd.Run(args, cwd, e.fs)
+
+	var lastOutput string
+	var lastResult Result
+
+	for i, pc := range pipeline {
+		cmd, ok := e.registry[pc.Name]
+		if !ok {
+			return Result{Error: pc.Name + ": command not found"}
+		}
+		args := pc.Args
+		// For pipes: append previous output as extra arg (simplified pipe)
+		if i > 0 && lastOutput != "" {
+			args = append(args, lastOutput)
+		}
+		lastResult = cmd.Run(args, cwd, e.fs)
+		if lastResult.Error != "" {
+			return lastResult
+		}
+		// Handle redirect
+		if pc.RedirectTo != "" {
+			p := ResolvePath(cwd, pc.RedirectTo)
+			e.fs.WriteFile(p, lastResult.Output, false)
+			lastResult.Output = ""
+		}
+		lastOutput = lastResult.Output
+	}
+	return lastResult
 }
