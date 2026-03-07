@@ -129,3 +129,43 @@ func TestMove_File(t *testing.T) {
 		t.Error("expected destination to exist")
 	}
 }
+
+func TestFS_Serialize_Deserialize(t *testing.T) {
+	fs := shell.NewFS()
+	fs.Mkdir("/island", false)
+	fs.Mkdir("/island/cave", false)
+	fs.WriteFile("/island/cave/note.txt", "hello pirate", false)
+	fs.WriteFile("/island/cave/.secret", "hidden treasure", true)
+
+	json, err := fs.Serialize()
+	if err != nil {
+		t.Fatalf("Serialize: %v", err)
+	}
+	if json == "" {
+		t.Fatal("Serialize returned empty string")
+	}
+
+	// Deserialize into a new FS
+	fs2, err := shell.DeserializeFS(json)
+	if err != nil {
+		t.Fatalf("DeserializeFS: %v", err)
+	}
+
+	// Check the note file
+	node, err := fs2.Stat("/island/cave/note.txt")
+	if err != nil {
+		t.Fatalf("Stat after deserialize: %v", err)
+	}
+	if node.Content != "hello pirate" {
+		t.Errorf("expected 'hello pirate', got %q", node.Content)
+	}
+
+	// Check hidden file is preserved
+	node2, err := fs2.Stat("/island/cave/.secret")
+	if err != nil {
+		t.Fatalf("Stat hidden: %v", err)
+	}
+	if !node2.Hidden {
+		t.Error("expected .secret to be hidden")
+	}
+}
