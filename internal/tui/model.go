@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"fmt"
+	"math/rand"
 	"sort"
 	"strings"
 
@@ -18,6 +20,9 @@ const (
 	StateProfileSelect
 	StateTierSelect
 	StateNameInput
+	StateWelcome
+	StateAdventureLog
+	StateParentMode
 )
 
 // Model is the root Bubble Tea model.
@@ -46,6 +51,11 @@ type Model struct {
 	profiles    []*db.Player
 	selectedIdx int
 	nameInput   string
+
+	// parent mode
+	mathAnswer     string
+	mathA, mathB   int
+	parentUnlocked bool
 }
 
 // NewGameModel creates a model ready to play a mission.
@@ -64,11 +74,11 @@ func NewGameModel(d *db.DB, player *db.Player, fs *shell.FS, ex *shell.Executor,
 	}
 }
 
-// NewStartupModel creates a model starting at the profile select screen.
+// NewStartupModel creates a model starting at the welcome screen.
 func NewStartupModel(d *db.DB) Model {
 	players, _ := d.ListPlayers()
 	return Model{
-		state:    StateProfileSelect,
+		state:    StateWelcome,
 		db:       d,
 		profiles: players,
 		maxLines: 20,
@@ -86,6 +96,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 	case tea.KeyMsg:
 		switch m.state {
+		case StateWelcome:
+			return m.handleWelcomeKey(msg)
 		case StateGame:
 			return m.handleKey(msg)
 		case StateProfileSelect:
@@ -94,6 +106,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.handleTierKey(msg)
 		case StateNameInput:
 			return m.handleNameKey(msg)
+		case StateAdventureLog:
+			return m.handleAdventureLogKey(msg)
+		case StateParentMode:
+			return m.handleParentModeKey(msg)
 		}
 	}
 	return m, nil
@@ -101,6 +117,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	switch m.state {
+	case StateWelcome:
+		return m.welcomeView()
 	case StateGame:
 		return m.gameView()
 	case StateProfileSelect:
@@ -109,15 +127,37 @@ func (m Model) View() string {
 		return m.tierSelectView()
 	case StateNameInput:
 		return m.nameInputView()
+	case StateAdventureLog:
+		return m.adventureLogView()
+	case StateParentMode:
+		return m.parentModeView()
 	default:
 		return "Loading..."
 	}
+}
+
+func (m Model) handleWelcomeKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.Type {
+	case tea.KeyCtrlC:
+		return m, tea.Quit
+	case tea.KeyEnter:
+		m.state = StateProfileSelect
+	}
+	return m, nil
 }
 
 func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.Type {
 	case tea.KeyCtrlC:
 		return m, tea.Quit
+	case tea.KeyCtrlL:
+		m.state = StateAdventureLog
+	case tea.KeyCtrlP:
+		m.state = StateParentMode
+		m.mathA = rand.Intn(10) + 1
+		m.mathB = rand.Intn(10) + 1
+		m.mathAnswer = ""
+		m.parentUnlocked = false
 	case tea.KeyEnter:
 		return m.submitCommand()
 	case tea.KeyBackspace:
@@ -129,6 +169,56 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.inputBuf += string(msg.Runes)
 		} else if msg.Type == tea.KeySpace {
 			m.inputBuf += " "
+		}
+	}
+	return m, nil
+}
+
+func (m Model) handleAdventureLogKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.Type {
+	case tea.KeyCtrlC:
+		return m, tea.Quit
+	case tea.KeyEsc, tea.KeyEnter, tea.KeyCtrlL:
+		m.state = StateGame
+	}
+	return m, nil
+}
+
+func (m Model) handleParentModeKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if m.parentUnlocked {
+		switch msg.Type {
+		case tea.KeyCtrlC:
+			return m, tea.Quit
+		case tea.KeyEsc:
+			m.state = StateGame
+			m.parentUnlocked = false
+		case tea.KeyRunes:
+			if msg.String() == "q" {
+				return m, tea.Quit
+			}
+		}
+		return m, nil
+	}
+
+	switch msg.Type {
+	case tea.KeyCtrlC:
+		return m, tea.Quit
+	case tea.KeyEsc:
+		m.state = StateGame
+	case tea.KeyEnter:
+		expected := fmt.Sprintf("%d", m.mathA+m.mathB)
+		if m.mathAnswer == expected {
+			m.parentUnlocked = true
+		} else {
+			m.mathAnswer = ""
+		}
+	case tea.KeyBackspace:
+		if len(m.mathAnswer) > 0 {
+			m.mathAnswer = m.mathAnswer[:len(m.mathAnswer)-1]
+		}
+	default:
+		if msg.Type == tea.KeyRunes {
+			m.mathAnswer += string(msg.Runes)
 		}
 	}
 	return m, nil
