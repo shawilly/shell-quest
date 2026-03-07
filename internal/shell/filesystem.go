@@ -1,6 +1,7 @@
 package shell
 
 import (
+	"encoding/json"
 	"fmt"
 	"path"
 	"sort"
@@ -202,4 +203,78 @@ func (fs *FS) Move(src, dst string) error {
 	dstParent.children[dstName] = srcNode
 	srcNode.Name = dstName
 	return fs.Remove(src)
+}
+
+// SerializedNode is used for JSON marshaling of the virtual FS.
+type SerializedNode struct {
+	Type        string `json:"type"`
+	Content     string `json:"content,omitempty"`
+	Hidden      bool   `json:"hidden,omitempty"`
+	Permissions string `json:"permissions,omitempty"`
+}
+
+// Serialize walks the entire FS tree and returns a JSON snapshot.
+// The result is a flat map of absolute path -> node attributes.
+func (fs *FS) Serialize() (string, error) {
+	nodes := map[string]SerializedNode{}
+	var walk func(p string, node *Node)
+	walk = func(p string, node *Node) {
+		nodes[p] = SerializedNode{
+			Type:        string(node.Type),
+			Content:     node.Content,
+			Hidden:      node.Hidden,
+			Permissions: node.Permissions,
+		}
+		for name, child := range node.children {
+			childPath := p + "/" + name
+			if p == "/" {
+				childPath = "/" + name
+			}
+			walk(childPath, child)
+		}
+	}
+	// Walk all root children (not root itself)
+	for name, child := range fs.root.children {
+		walk("/"+name, child)
+	}
+	b, err := json.Marshal(nodes)
+	return string(b), err
+}
+
+// DeserializeFS reconstructs a FS from a JSON snapshot produced by Serialize.
+func DeserializeFS(data string) (*FS, error) {
+	var nodes map[string]SerializedNode
+	if err := json.Unmarshal([]byte(data), &nodes); err != nil {
+		return nil, err
+	}
+
+	fs := NewFS()
+
+	// Sort paths so parents are created before children
+	paths := make([]string, 0, len(nodes))
+	for p := range nodes {
+		paths = append(paths, p)
+	}
+	sort.Strings(paths)
+
+	for _, p := range paths {
+		n := nodes[p]
+		if n.Type == "dir" {
+			if err := fs.Mkdir(p, n.Hidden); err != nil {
+				return nil, fmt.Errorf("deserialize mkdir %s: %w", p, err)
+			}
+		} else {
+			if err := fs.WriteFile(p, n.Content, n.Hidden); err != nil {
+				return nil, fmt.Errorf("deserialize write %s: %w", p, err)
+			}
+			// Restore permissions if set
+			if n.Permissions != "" {
+				node, _ := fs.Stat(p)
+				if node != nil {
+					node.Permissions = n.Permissions
+				}
+			}
+		}
+	}
+	return fs, nil
 }
