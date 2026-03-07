@@ -1,0 +1,61 @@
+{
+  "id": "skull_island",
+  "title": "Skull Island",
+  "missions": [
+    {
+      "id": "mission_1",
+      "title": "The First Clue",
+      "starting_clue": "Arr! Welcome to Skull Island, young pirate! Old Pete says there be treasure nearby. Start by looking around with 'ls'.",
+      "objectives": [
+        { "command": "ls", "path": "/island" },
+        { "command": "cd", "path": "/island/cave" },
+        { "command": "cat", "path": "/island/cave/.treasure_map" }
+      ],
+      "success_message": "Shiver me timbers! You found the treasure map!",
+      "treasure": "A worn map tumbles out. X marks the spot on Skull Mountain!",
+      "unlocks": ["mission_2"],
+      "filesystem": {
+        "/island": { "type": "dir" },
+        "/island/cave": { "type": "dir" },
+        "/island/cave/.treasure_map": {
+          "type": "file",
+          "hidden": true,
+          "content": "X marks the spot: /mountain/peak/chest"
+        },
+        "/island/cave/old_note.txt": {
+          "type": "file",
+          "content": "Arr, many have searched here before ye, young pirate..."
+        },
+        "/island/palm_tree.txt": {
+          "type": "file",
+          "content": "A coconut falls on your head. Ouch!"
+        }
+      }
+    },
+    {
+      "id": "mission_2",
+      "title": "The Mountain Path",
+      "starting_clue": "The map says the treasure is at /mountain/peak/chest. Use 'find' to locate it!",
+      "objectives": [
+        { "command": "find", "path": "/mountain" },
+        { "command": "cat", "path": "/mountain/peak/chest" }
+      ],
+      "success_message": "TREASURE FOUND! You are a true pirate master!",
+      "treasure": "A chest overflowing with gold doubloons! You've completed Skull Island!",
+      "unlocks": [],
+      "filesystem": {
+        "/mountain": { "type": "dir" },
+        "/mountain/path": { "type": "dir" },
+        "/mountain/peak": { "type": "dir" },
+        "/mountain/peak/chest": {
+          "type": "file",
+          "content": "*** TREASURE CHEST ***\nGold doubloons: 1000\nYou are a true pirate! Arr!"
+        },
+        "/mountain/path/sign.txt": {
+          "type": "file",
+          "content": "This way to the peak! Watch for the chest..."
+        }
+      }
+    }
+  ]
+}
