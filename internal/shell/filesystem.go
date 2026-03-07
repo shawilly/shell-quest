@@ -126,3 +126,48 @@ func (fs *FS) listDir(p string, showHidden bool) ([]*Node, error) {
 
 func (fs *FS) ListDir(p string) ([]*Node, error)    { return fs.listDir(p, false) }
 func (fs *FS) ListDirAll(p string) ([]*Node, error) { return fs.listDir(p, true) }
+
+// ResolvePath resolves p relative to cwd. Absolute paths are cleaned as-is.
+func ResolvePath(cwd, p string) string {
+	if strings.HasPrefix(p, "/") {
+		return path.Clean(p)
+	}
+	return path.Clean(cwd + "/" + p)
+}
+
+func (fs *FS) Remove(p string) error {
+	parent, name, err := fs.resolveParent(p)
+	if err != nil {
+		return err
+	}
+	if _, ok := parent.children[name]; !ok {
+		return fmt.Errorf("no such file or directory: %s", p)
+	}
+	delete(parent.children, name)
+	return nil
+}
+
+func (fs *FS) Copy(src, dst string) error {
+	srcNode, err := fs.resolve(src)
+	if err != nil {
+		return err
+	}
+	if srcNode.Type == NodeDir {
+		return fmt.Errorf("cp: cannot copy directory (use -r): %s", src)
+	}
+	return fs.WriteFile(dst, srcNode.Content, srcNode.Hidden)
+}
+
+func (fs *FS) Move(src, dst string) error {
+	srcNode, err := fs.resolve(src)
+	if err != nil {
+		return err
+	}
+	dstParent, dstName, err := fs.resolveParent(dst)
+	if err != nil {
+		return err
+	}
+	dstParent.children[dstName] = srcNode
+	srcNode.Name = dstName
+	return fs.Remove(src)
+}

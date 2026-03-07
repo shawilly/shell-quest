@@ -83,3 +83,49 @@ func TestListDirAll_ShowsHidden(t *testing.T) {
 		t.Errorf("expected 2 entries including hidden, got %d", len(entries))
 	}
 }
+
+func TestRemove_File(t *testing.T) {
+	fs := shell.NewFS()
+	fs.Mkdir("/island", false)
+	fs.WriteFile("/island/note.txt", "hi", false)
+	if err := fs.Remove("/island/note.txt"); err != nil {
+		t.Fatal(err)
+	}
+	_, err := fs.Stat("/island/note.txt")
+	if err == nil {
+		t.Error("expected error after removal")
+	}
+}
+
+func TestCopy_File(t *testing.T) {
+	fs := shell.NewFS()
+	fs.Mkdir("/a", false)
+	fs.Mkdir("/b", false)
+	fs.WriteFile("/a/file.txt", "content", false)
+	if err := fs.Copy("/a/file.txt", "/b/file.txt"); err != nil {
+		t.Fatal(err)
+	}
+	node, err := fs.Stat("/b/file.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if node.Content != "content" {
+		t.Errorf("expected 'content', got %q", node.Content)
+	}
+}
+
+func TestMove_File(t *testing.T) {
+	fs := shell.NewFS()
+	fs.Mkdir("/a", false)
+	fs.Mkdir("/b", false)
+	fs.WriteFile("/a/file.txt", "content", false)
+	if err := fs.Move("/a/file.txt", "/b/file.txt"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fs.Stat("/a/file.txt"); err == nil {
+		t.Error("expected source to be gone")
+	}
+	if _, err := fs.Stat("/b/file.txt"); err != nil {
+		t.Error("expected destination to exist")
+	}
+}
