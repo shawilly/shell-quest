@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -27,6 +28,7 @@ const (
 	StateWelcome
 	StateAdventureLog
 	StateParentMode
+	StateLoading
 )
 
 // Model is the root Bubble Tea model.
@@ -62,6 +64,9 @@ type Model struct {
 	mathInput      textinput.Model
 	mathA, mathB   int
 	parentUnlocked bool
+
+	// loading screen
+	spinner spinner.Model
 }
 
 // NewGameModel creates a model ready to play a mission.
@@ -82,6 +87,7 @@ func NewGameModel(d *db.DB, player *db.Player, fs *shell.FS, ex *shell.Executor,
 	m.shellVP = newShellViewport(80, 20)
 	m.mathInput = newMathInput()
 	m.nameInput = newNameInput()
+	m.spinner = newSpinner()
 	return m
 }
 
@@ -98,11 +104,12 @@ func NewStartupModel(d *db.DB) Model {
 	m.shellInput.Focus()
 	m.shellVP = newShellViewport(80, 20)
 	m.profileList = newProfileList(players, 40, 20)
+	m.spinner = newSpinner()
 	return m
 }
 
 func (m Model) Init() tea.Cmd {
-	return textinput.Blink
+	return tea.Batch(textinput.Blink, m.spinner.Tick)
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -139,6 +146,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.handleAdventureLogKey(msg)
 		case StateParentMode:
 			return m.handleParentModeKey(msg)
+		case StateLoading:
+			return m.handleLoadingUpdate(msg)
+		}
+	default:
+		if m.state == StateLoading {
+			return m.handleLoadingUpdate(msg)
 		}
 	}
 	return m, nil
@@ -160,6 +173,8 @@ func (m Model) View() string {
 		return m.adventureLogView()
 	case StateParentMode:
 		return m.parentModeView()
+	case StateLoading:
+		return m.loadingView()
 	default:
 		return "Loading..."
 	}
@@ -307,54 +322,84 @@ func (m Model) handleNameKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-// startGame initializes the game with the selected player.
+type worldReadyMsg struct {
+	m Model
+}
+
+// startGame transitions to StateLoading and kicks off world initialization in the background.
 func (m Model) startGame() (Model, tea.Cmd) {
-	w, err := world.LoadWorld("skull_island")
-	if err != nil {
-		return m, tea.Quit
-	}
-	mission := w.Missions[0]
+	m.state = StateLoading
+	player := m.player
+	// Capture a snapshot of the model to build the loaded state from.
+	base := m
+	return m, tea.Batch(
+		m.spinner.Tick,
+		func() tea.Msg {
+			w, err := world.LoadWorld("skull_island")
+			if err != nil {
+				return tea.Quit
+			}
+			mission := w.Missions[0]
 
-	fs := shell.NewFS()
-	paths := make([]string, 0, len(mission.Filesystem))
-	for p := range mission.Filesystem {
-		paths = append(paths, p)
-	}
-	sort.Strings(paths)
-	for _, p := range paths {
-		entry := mission.Filesystem[p]
-		if entry.Type == "dir" {
-			if err := fs.Mkdir(p, entry.Hidden); err != nil {
-				log.Fatal(err)
+			fs := shell.NewFS()
+			paths := make([]string, 0, len(mission.Filesystem))
+			for p := range mission.Filesystem {
+				paths = append(paths, p)
 			}
-		} else {
-			if err := fs.WriteFile(p, entry.Content, entry.Hidden); err != nil {
-				log.Fatal(err)
+			sort.Strings(paths)
+			for _, p := range paths {
+				entry := mission.Filesystem[p]
+				if entry.Type == "dir" {
+					if err := fs.Mkdir(p, entry.Hidden); err != nil {
+						log.Fatal(err)
+					}
+				} else {
+					if err := fs.WriteFile(p, entry.Content, entry.Hidden); err != nil {
+						log.Fatal(err)
+					}
+				}
 			}
+
+			ex := shell.NewExecutor(fs)
+			RegisterCommands(ex, player.Tier)
+			runner := world.NewMissionRunner(mission)
+
+			cwd := mission.StartingCWD
+			if cwd == "" {
+				cwd = "/"
+			}
+
+			loaded := base
+			loaded.fs = fs
+			loaded.executor = ex
+			loaded.runner = runner
+			loaded.gameWorld = w
+			loaded.missionIdx = 0
+			loaded.cwd = cwd
+			loaded.clueText = mission.StartingClue
+			loaded.storyText = missionIntro(mission)
+			loaded.state = StateGame
+			loaded.shellLines = nil
+			loaded.shellVP.SetContent("")
+			loaded.failCount = 0
+			return worldReadyMsg{m: loaded}
+		},
+	)
+}
+
+func (m Model) handleLoadingUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		if msg.Type == tea.KeyCtrlC {
+			return m, tea.Quit
 		}
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
+	case worldReadyMsg:
+		return msg.m, nil
 	}
-
-	ex := shell.NewExecutor(fs)
-	RegisterCommands(ex, m.player.Tier)
-	runner := world.NewMissionRunner(mission)
-
-	cwd := mission.StartingCWD
-	if cwd == "" {
-		cwd = "/"
-	}
-
-	m.fs = fs
-	m.executor = ex
-	m.runner = runner
-	m.gameWorld = w
-	m.missionIdx = 0
-	m.cwd = cwd
-	m.clueText = mission.StartingClue
-	m.storyText = missionIntro(mission)
-	m.state = StateGame
-	m.shellLines = nil
-	m.shellVP.SetContent("")
-	m.failCount = 0
 	return m, nil
 }
 
