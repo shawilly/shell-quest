@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/shanewilliams/shell-quest/internal/db"
 	"github.com/shanewilliams/shell-quest/internal/shell"
@@ -53,7 +54,7 @@ type Model struct {
 	// profile selection
 	profiles    []*db.Player
 	selectedIdx int
-	nameInput   string
+	nameInput   textinput.Model
 
 	// parent mode
 	mathAnswer     string
@@ -80,16 +81,18 @@ func NewGameModel(d *db.DB, player *db.Player, fs *shell.FS, ex *shell.Executor,
 // NewStartupModel creates a model starting at the welcome screen.
 func NewStartupModel(d *db.DB) Model {
 	players, _ := d.ListPlayers()
-	return Model{
+	m := Model{
 		state:    StateWelcome,
 		db:       d,
 		profiles: players,
 		maxLines: 20,
 	}
+	m.nameInput = newNameInput()
+	return m
 }
 
 func (m Model) Init() tea.Cmd {
-	return nil
+	return textinput.Blink
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -242,7 +245,8 @@ func (m Model) handleProfileKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.selectedIdx == len(m.profiles) {
 			// "New Profile" selected
 			m.state = StateNameInput
-			m.nameInput = ""
+			m.nameInput.SetValue("")
+			m.nameInput.Focus()
 		} else {
 			// Existing profile selected
 			m.player = m.profiles[m.selectedIdx]
@@ -271,7 +275,7 @@ func (m Model) handleTierKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		tier := tiers[m.selectedIdx]
-		player, err := m.db.CreatePlayer(m.nameInput, tier)
+		player, err := m.db.CreatePlayer(strings.TrimSpace(m.nameInput.Value()), tier)
 		if err != nil {
 			return m, nil
 		}
@@ -286,20 +290,18 @@ func (m Model) handleNameKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case tea.KeyCtrlC:
 		return m, tea.Quit
 	case tea.KeyEnter:
-		if len(strings.TrimSpace(m.nameInput)) > 0 {
+		if len(strings.TrimSpace(m.nameInput.Value())) > 0 {
 			m.state = StateTierSelect
 			m.selectedIdx = 0
+			m.nameInput.Blur()
 		}
-	case tea.KeyBackspace:
-		if len(m.nameInput) > 0 {
-			m.nameInput = m.nameInput[:len(m.nameInput)-1]
-		}
-	case tea.KeyRunes:
-		m.nameInput += string(msg.Runes)
-	case tea.KeySpace:
-		m.nameInput += " "
+		return m, nil
+	case tea.KeyEsc:
+		return m, nil
 	}
-	return m, nil
+	var cmd tea.Cmd
+	m.nameInput, cmd = m.nameInput.Update(msg)
+	return m, cmd
 }
 
 // startGame initializes the game with the selected player.

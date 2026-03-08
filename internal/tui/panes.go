@@ -140,7 +140,7 @@ func (m Model) tierSelectView() string {
 		{"Master", "Ages 8-10. + grep, chmod, man, history, pipes, globs", true},
 	}
 	var b strings.Builder
-	b.WriteString(TitleStyle.Render("Choose Your Difficulty, "+m.nameInput) + "\n\n")
+	b.WriteString(TitleStyle.Render("Choose Your Difficulty, "+m.nameInput.Value()) + "\n\n")
 	for i, t := range tiers {
 		cursor := "  "
 		if i == m.selectedIdx {
@@ -154,14 +154,5 @@ func (m Model) tierSelectView() string {
 		}
 	}
 	b.WriteString("Use up/down arrows and Enter to select.")
-	return b.String()
-}
-
-func (m Model) nameInputView() string {
-	var b strings.Builder
-	b.WriteString(TitleStyle.Render("SHELL QUEST - Enter Your Pirate Name") + "\n\n")
-	b.WriteString("What is your name, young pirate?\n\n")
-	b.WriteString("> " + m.nameInput + "_\n\n")
-	b.WriteString("Press Enter when done.")
 	return b.String()
 }
