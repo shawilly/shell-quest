@@ -5,22 +5,12 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/shanewilliams/shell-quest/content"
 )
-
-const pirateArt = `     _____
-    /     \
-   | () () |
-    \  ^  /
-     |||||
-     |||||
-  _____|_____
- /___________\
-| SHELL QUEST |
- \___________/`
 
 func (m Model) welcomeView() string {
 	var b strings.Builder
-	b.WriteString(pirateArt + "\n\n")
+	b.WriteString(content.PirateArt + "\n")
 	b.WriteString(TitleStyle.Render("Welcome to Shell Quest!") + "\n\n")
 	b.WriteString("Learn the secrets of the command line\n")
 	b.WriteString("through pirate treasure hunting!\n\n")
@@ -152,12 +142,13 @@ func (m Model) profileSelectView() string {
 
 func (m Model) tierSelectView() string {
 	tiers := []struct {
-		name string
-		desc string
+		name       string
+		desc       string
+		comingSoon bool
 	}{
-		{"Beginner", "Ages 3-6. Commands: ls, cd, pwd, cat, echo, clear, help"},
-		{"Explorer", "Ages 6-8. + mkdir, touch, cp, mv, rm, find"},
-		{"Master", "Ages 8-10. + grep, chmod, man, history, pipes, globs"},
+		{"Beginner", "Ages 3-6. Commands: ls, cd, pwd, cat, echo, clear, help", false},
+		{"Explorer", "Ages 6-8. + mkdir, touch, cp, mv, rm, find", true},
+		{"Master", "Ages 8-10. + grep, chmod, man, history, pipes, globs", true},
 	}
 	var b strings.Builder
 	b.WriteString(TitleStyle.Render("Choose Your Difficulty, "+m.nameInput) + "\n\n")
@@ -166,7 +157,12 @@ func (m Model) tierSelectView() string {
 		if i == m.selectedIdx {
 			cursor = "> "
 		}
-		b.WriteString(fmt.Sprintf("%s%s\n    %s\n\n", cursor, t.name, t.desc))
+		if t.comingSoon {
+			line := fmt.Sprintf("%s%s  [ Coming Soon ]\n    %s\n\n", cursor, t.name, t.desc)
+			b.WriteString(lipgloss.NewStyle().Faint(true).Render(line))
+		} else {
+			b.WriteString(fmt.Sprintf("%s%s\n    %s\n\n", cursor, t.name, t.desc))
+		}
 	}
 	b.WriteString("Use up/down arrows and Enter to select.")
 	return b.String()

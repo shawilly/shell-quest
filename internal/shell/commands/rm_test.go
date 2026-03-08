@@ -9,7 +9,7 @@ import (
 
 func TestRm_DeletesFile(t *testing.T) {
 	fs := shell.NewFS()
-	fs.WriteFile("/gone.txt", "bye", false)
+	_ = fs.WriteFile("/gone.txt", "bye", false)
 	cmd := commands.NewRm()
 	result := cmd.Run([]string{"gone.txt"}, "/", fs)
 	if result.Error != "" {
@@ -22,7 +22,7 @@ func TestRm_DeletesFile(t *testing.T) {
 
 func TestRm_Directory_Errors(t *testing.T) {
 	fs := shell.NewFS()
-	fs.Mkdir("/dir", false)
+	_ = fs.Mkdir("/dir", false)
 	cmd := commands.NewRm()
 	result := cmd.Run([]string{"dir"}, "/", fs)
 	if result.Error == "" {

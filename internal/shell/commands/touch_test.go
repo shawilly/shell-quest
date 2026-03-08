@@ -22,7 +22,7 @@ func TestTouch_CreatesFile(t *testing.T) {
 
 func TestTouch_ExistingFile_NoOp(t *testing.T) {
 	fs := shell.NewFS()
-	fs.WriteFile("/existing.txt", "content", false)
+	_ = fs.WriteFile("/existing.txt", "content", false)
 	cmd := commands.NewTouch()
 	result := cmd.Run([]string{"existing.txt"}, "/", fs)
 	if result.Error != "" {

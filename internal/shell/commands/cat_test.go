@@ -9,7 +9,7 @@ import (
 
 func TestCat_ReadsFile(t *testing.T) {
 	fs := shell.NewFS()
-	fs.WriteFile("/note.txt", "treasure here!", false)
+	_ = fs.WriteFile("/note.txt", "treasure here!", false)
 	cmd := commands.NewCat()
 	result := cmd.Run([]string{"note.txt"}, "/", fs)
 	if result.Output != "treasure here!" {
@@ -19,7 +19,7 @@ func TestCat_ReadsFile(t *testing.T) {
 
 func TestCat_EmitsEvent(t *testing.T) {
 	fs := shell.NewFS()
-	fs.WriteFile("/clue.txt", "go north", false)
+	_ = fs.WriteFile("/clue.txt", "go north", false)
 	cmd := commands.NewCat()
 	result := cmd.Run([]string{"clue.txt"}, "/", fs)
 	if result.Event == nil || result.Event.Type != "cat" {
@@ -29,7 +29,7 @@ func TestCat_EmitsEvent(t *testing.T) {
 
 func TestCat_Directory_Errors(t *testing.T) {
 	fs := shell.NewFS()
-	fs.Mkdir("/island", false)
+	_ = fs.Mkdir("/island", false)
 	cmd := commands.NewCat()
 	result := cmd.Run([]string{"island"}, "/", fs)
 	if result.Error == "" {

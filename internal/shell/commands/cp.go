@@ -19,5 +19,5 @@ func (c *Cp) Run(args []string, cwd string, fs *shell.FS) shell.Result {
 	if err := fs.Copy(src, dst); err != nil {
 		return shell.Result{Error: "cp: " + err.Error()}
 	}
-	return shell.Result{}
+	return shell.Result{Event: &shell.Event{Type: "cp", Path: dst}}
 }

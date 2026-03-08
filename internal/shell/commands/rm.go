@@ -25,5 +25,5 @@ func (r *Rm) Run(args []string, cwd string, fs *shell.FS) shell.Result {
 	if err := fs.Remove(p); err != nil {
 		return shell.Result{Error: "rm: " + err.Error()}
 	}
-	return shell.Result{}
+	return shell.Result{Event: &shell.Event{Type: "rm", Path: p}}
 }

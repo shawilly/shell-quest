@@ -10,9 +10,9 @@ import (
 
 func TestFind_FindsFileByName(t *testing.T) {
 	fs := shell.NewFS()
-	fs.Mkdir("/island", false)
-	fs.Mkdir("/island/cave", false)
-	fs.WriteFile("/island/cave/treasure.txt", "gold!", false)
+	_ = fs.Mkdir("/island", false)
+	_ = fs.Mkdir("/island/cave", false)
+	_ = fs.WriteFile("/island/cave/treasure.txt", "gold!", false)
 
 	cmd := commands.NewFind()
 	result := cmd.Run([]string{"-name", "treasure.txt"}, "/island", fs)
@@ -26,7 +26,7 @@ func TestFind_FindsFileByName(t *testing.T) {
 
 func TestFind_NoMatch_ReturnsNothingFound(t *testing.T) {
 	fs := shell.NewFS()
-	fs.Mkdir("/island", false)
+	_ = fs.Mkdir("/island", false)
 
 	cmd := commands.NewFind()
 	result := cmd.Run([]string{"-name", "missing.txt"}, "/island", fs)

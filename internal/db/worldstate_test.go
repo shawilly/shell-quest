@@ -26,8 +26,12 @@ func TestSaveWorldState_Upsert(t *testing.T) {
 	d := testDB(t)
 	player, _ := d.CreatePlayer("TestPirate2", "beginner")
 
-	d.SaveWorldState(player.ID, "skull_island", `{"v": "1"}`)
-	d.SaveWorldState(player.ID, "skull_island", `{"v": "2"}`) // upsert
+	if err := d.SaveWorldState(player.ID, "skull_island", `{"v": "1"}`); err != nil {
+		t.Fatal(err)
+	}
+	if err := d.SaveWorldState(player.ID, "skull_island", `{"v": "2"}`); err != nil { // upsert
+		t.Fatal(err)
+	}
 
 	loaded, err := d.LoadWorldState(player.ID, "skull_island")
 	if err != nil {

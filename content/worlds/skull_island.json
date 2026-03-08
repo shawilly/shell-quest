@@ -4,56 +4,402 @@
   "missions": [
     {
       "id": "mission_1",
-      "title": "The First Clue",
-      "starting_clue": "Arr! Welcome to Skull Island, young pirate! Old Pete says there be treasure nearby. Start by looking around with 'ls'.",
+      "title": "Awakening at the Docks",
+      "starting_cwd": "/docks",
+      "starting_clue": "Arr! I be Old Pete. The Kraken scattered our treasure maps! Start by havin' a look around the docks with 'ls'.",
+      "intro_dialogue": {
+        "npc": "Old Pete",
+        "text": "Ahoy, young pirate! I be Old Pete, navigator of Skull Island. The Kraken has scattered our treasure maps! Start by havin' a look around the docks with 'ls'."
+      },
       "objectives": [
-        { "command": "ls", "path": "/island" },
-        { "command": "cd", "path": "/island/cave" },
-        { "command": "cat", "path": "/island/cave/.treasure_map" }
+        { "command": "ls", "path": "/docks" },
+        { "command": "cat", "path": "/docks/old_petes_note.txt" }
       ],
-      "success_message": "Shiver me timbers! You found the treasure map!",
-      "treasure": "A worn map tumbles out. X marks the spot on Skull Mountain!",
+      "objective_hints": [
+        "Good eye! I left a note for ye somewhere in the docks. Try 'cat old_petes_note.txt' to read it!",
+        "Shiver me timbers! On to the jungle!"
+      ],
+      "success_message": "Shiver me timbers! Ye found the first map piece!",
+      "bug_taunt": "BWAHAHAHA! Ye found the first dock clue! But there be nine more pieces — and they all be MINE! — The Kraken",
+      "treasure": "A worn note tumbles out: 'Head to the jungle — the next map piece hides there!'",
       "unlocks": ["mission_2"],
       "filesystem": {
-        "/island": { "type": "dir" },
-        "/island/cave": { "type": "dir" },
-        "/island/cave/.treasure_map": {
+        "/docks": { "type": "dir" },
+        "/docks/welcome.txt": {
           "type": "file",
-          "hidden": true,
-          "content": "X marks the spot: /mountain/peak/chest"
+          "content": "Welcome to Skull Island, brave pirate! The adventure begins here."
         },
-        "/island/cave/old_note.txt": {
+        "/docks/broken_barrel.txt": {
           "type": "file",
-          "content": "Arr, many have searched here before ye, young pirate..."
+          "content": "An empty barrel. Smells like fish."
         },
-        "/island/palm_tree.txt": {
+        "/docks/rusty_anchor.txt": {
           "type": "file",
-          "content": "A coconut falls on your head. Ouch!"
+          "content": "Too heavy to lift. Leave it."
+        },
+        "/docks/old_petes_note.txt": {
+          "type": "file",
+          "content": "Map Piece 1: Found it! The jungle path leads north — head there next, brave pirate!"
         }
       }
     },
     {
       "id": "mission_2",
-      "title": "The Mountain Path",
-      "starting_clue": "The map says the treasure is at /mountain/peak/chest. Use 'find' to locate it!",
+      "title": "The Jungle Crossroads",
+      "starting_cwd": "/jungle",
+      "starting_clue": "A true pirate always knows where they stand! Use 'pwd' to find yer position, then navigate the jungle paths.",
+      "intro_dialogue": {
+        "npc": "Old Pete",
+        "text": "A true pirate always knows where they stand! Use 'pwd' to find yer position, then navigate the jungle paths with 'cd'."
+      },
+      "objectives": [
+        { "command": "pwd", "path": "/jungle" },
+        { "command": "cd", "path": "/jungle/path_south/clearing" },
+        { "command": "cat", "path": "/jungle/path_south/clearing/map_piece_2.txt" }
+      ],
+      "objective_hints": [
+        "Arr, ye know where ye be! Now navigate south — try 'cd path_south/clearing'!",
+        "Ye made it to the clearing! Read the map piece with 'cat map_piece_2.txt'!",
+        "Excellent navigation! On to the hidden cove!"
+      ],
+      "success_message": "Brilliant navigation! Ye found Map Piece 2!",
+      "bug_taunt": "HO HO! Ye navigated the jungle — but the real treasure be deeper in the island! — The Kraken",
+      "treasure": "Map Piece 2: 'Head to the hidden cove — some things there hide from plain sight!'",
+      "unlocks": ["mission_3"],
+      "filesystem": {
+        "/jungle": { "type": "dir" },
+        "/jungle/path_north": { "type": "dir" },
+        "/jungle/path_south": { "type": "dir" },
+        "/jungle/path_south/clearing": { "type": "dir" },
+        "/jungle/path_north/dead_end.txt": {
+          "type": "file",
+          "content": "A dead end. Nothing here but mosquitoes."
+        },
+        "/jungle/path_north/skelly_note.txt": {
+          "type": "file",
+          "content": "Arr! Try 'cd ..' to go back! Also has anyone seen me butt? — Skelly 💀"
+        },
+        "/jungle/strange_fruit.txt": {
+          "type": "file",
+          "content": "Do not eat the strange fruit. Trust me."
+        },
+        "/jungle/path_south/clearing/map_piece_2.txt": {
+          "type": "file",
+          "content": "Map Piece 2: Head to the hidden cove! Some things there hide from plain sight!"
+        }
+      }
+    },
+    {
+      "id": "mission_3",
+      "title": "The Hidden Cove",
+      "starting_cwd": "/cove",
+      "starting_clue": "The Kraken loves to hide things! Some secrets don't show with a regular 'ls'. Try 'ls -a' to reveal what's hidden!",
+      "intro_dialogue": {
+        "npc": "Old Pete",
+        "text": "The Kraken loves to hide things, arr! Some secrets don't show with a regular 'ls'. Try 'ls -a' to reveal what's hidden in the cove."
+      },
+      "objectives": [
+        { "command": "ls", "path": "/cove" },
+        { "command": "cat", "path": "/cove/.secret_cove_map" }
+      ],
+      "objective_hints": [
+        "Arrr! Some things be hidden! Try 'ls -a /cove' to see what lurks in the shadows! Then 'cat' the hidden file!",
+        "Ye found the secret map! On to the captain's quarters!"
+      ],
+      "success_message": "Gah! Ye found the hidden map! Ye have sharp eyes, young pirate!",
+      "bug_taunt": "GAH! Ye found me hidden file! I put it there MYSELF and ye STILL found it! — The Kraken",
+      "treasure": "Map Piece 3: The captain's quarters hold the next clue. Read everything carefully!",
+      "unlocks": ["mission_4"],
+      "filesystem": {
+        "/cove": { "type": "dir" },
+        "/cove/seaweed.txt": {
+          "type": "file",
+          "content": "Just seaweed. Very slimy."
+        },
+        "/cove/old_boot.txt": {
+          "type": "file",
+          "content": "One boot. Where's the other?"
+        },
+        "/cove/skelly_cat.txt": {
+          "type": "file",
+          "content": "Mrrow... ye're looking in the right place. The hidden file be right here. Also has anyone seen me fur? — Skelly Cat 🐱"
+        },
+        "/cove/.secret_cove_map": {
+          "type": "file",
+          "hidden": true,
+          "content": "Map Piece 3: The captain's quarters hold the next clue. Read everything carefully!"
+        }
+      }
+    },
+    {
+      "id": "mission_4",
+      "title": "The Captain's Log",
+      "starting_cwd": "/captains_quarters",
+      "starting_clue": "Captain Kernel left records of his voyages here. The log be long — but the next clue be at the very end. Read it all with 'cat'!",
+      "intro_dialogue": {
+        "npc": "Old Pete",
+        "text": "Captain Kernel left records of his voyages in this cabin. The log be long — but the next clue be at the very end. Read it all with 'cat captains_log.txt'!"
+      },
+      "objectives": [
+        { "command": "cat", "path": "/captains_quarters/captains_log.txt" }
+      ],
+      "objective_hints": [
+        "Patient as a barnacle! On to the shipyard!"
+      ],
+      "success_message": "Ye read every word! Captain Kernel would be proud!",
+      "bug_taunt": "ARGH! Ye have the patience of a barnacle! I thought the long scroll would stop ye! — The Kraken",
+      "treasure": "Map Piece 4: Found at the bottom of Captain Kernel's log. The shipyard awaits!",
+      "unlocks": ["mission_5"],
+      "filesystem": {
+        "/captains_quarters": { "type": "dir" },
+        "/captains_quarters/hat_collection.txt": {
+          "type": "file",
+          "content": "37 hats. The Captain loved hats."
+        },
+        "/captains_quarters/compass_note.txt": {
+          "type": "file",
+          "content": "The compass always points toward treasure. Or north. Hard to tell."
+        },
+        "/captains_quarters/captains_log.txt": {
+          "type": "file",
+          "content": "Captain's Log — Day 1: Set sail from the mainland at dawn.\nCaptain's Log — Day 2: Spotted flying fish. Skelly tried to catch one. He fell overboard.\nCaptain's Log — Day 3: Reached Skull Island. The Kraken circled the ship all night. Very rude.\nCaptain's Log — Day 4: Charted the docks, the jungle, and the hidden cove.\nCaptain's Log — Day 5: Discovered a witch's cave to the east. Did not go inside.\nCaptain's Log — Day 6: Found a shipyard on the south shore. Good lumber there.\nCaptain's Log — Day 7: The Kraken stole my best hat. Also Skelly's butt.\nCaptain's Log — Day 8: Explored the mountain. Nearly fell into a deep cave.\nCaptain's Log — Day 9: The vault at the root of the island holds the greatest treasure.\nCaptain's Log — Day 10: If ye be reading this, brave pirate — ye have found Map Piece 4.\n  Captain Kernel says: the shipyard holds yer next challenge! Build something magnificent!"
+        }
+      }
+    },
+    {
+      "id": "mission_5",
+      "title": "The Shipwright's Yard",
+      "starting_cwd": "/shipyard",
+      "starting_clue": "To claim yer treasure, ye must build yer own flagpole! Use 'mkdir' to make a directory and 'touch' to create a file inside it.",
+      "intro_dialogue": {
+        "npc": "Old Pete",
+        "text": "To claim yer treasure, ye must build yer own flagpole and raise a flag! Use 'mkdir flagpole' to build it, then 'touch flagpole/flag.txt' to raise yer flag!"
+      },
+      "objectives": [
+        { "command": "mkdir", "path": "/shipyard/flagpole" },
+        { "command": "touch", "path": "/shipyard/flagpole/flag.txt" }
+      ],
+      "objective_hints": [
+        "Well built! Now raise yer flag with 'touch flagpole/flag.txt'!",
+        "The flag flies high! On to the witch's cave!"
+      ],
+      "success_message": "Ye built yer flagpole and raised a flag! A true shipwright!",
+      "bug_taunt": "What?! Ye built something?! The Kraken is a DESTROYER, not a builder! This is embarrassing! — The Kraken",
+      "treasure": "Map Piece 5: Nailed to the new flagpole. The witch's cave holds the next key — make a copy before The Kraken destroys it!",
+      "unlocks": ["mission_6"],
+      "filesystem": {
+        "/shipyard": { "type": "dir" },
+        "/shipyard/lumber.txt": {
+          "type": "file",
+          "content": "Good wood. Could build a ship. Or a flagpole!"
+        },
+        "/shipyard/broken_mast.txt": {
+          "type": "file",
+          "content": "Already snapped by The Kraken. Useless."
+        },
+        "/shipyard/blueprint.txt": {
+          "type": "file",
+          "content": "Build a flagpole/ directory, add a flag.txt inside it, and raise yer colours!"
+        }
+      }
+    },
+    {
+      "id": "mission_6",
+      "title": "The Duplication Ritual",
+      "starting_cwd": "/witchs_cave",
+      "starting_clue": "A magic key hides in the witch's cave — but The Kraken will try to destroy the original! Make a copy with 'cp' before it's too late!",
+      "intro_dialogue": {
+        "npc": "Old Pete",
+        "text": "A mysterious cave holds a magic key — but The Kraken will try to destroy the original! Make a copy with 'cp magic_key.txt safe_chest/magic_key.txt' to keep it safe!"
+      },
+      "objectives": [
+        { "command": "cp", "path": "/witchs_cave/safe_chest/magic_key.txt" }
+      ],
+      "objective_hints": [
+        "The key is safe! On to the scrambled ship's hold!"
+      ],
+      "success_message": "Brilliant! Ye copied the key to safety!",
+      "bug_taunt": "Ye copied the key! But can ye survive the scrambled hold?! — The Kraken",
+      "treasure": "Map Piece 6: The copied key bears a message — 'The ship's hold be scrambled. Restore order!'",
+      "unlocks": ["mission_7"],
+      "filesystem": {
+        "/witchs_cave": { "type": "dir" },
+        "/witchs_cave/safe_chest": { "type": "dir" },
+        "/witchs_cave/magic_key.txt": {
+          "type": "file",
+          "content": "This key opens the treasure vault. Guard it well! Copy me to safe_chest/ with 'cp magic_key.txt safe_chest/magic_key.txt'."
+        },
+        "/witchs_cave/fake_doubloon.txt": {
+          "type": "file",
+          "content": "A painted rock. The Kraken's trick! Not the real key."
+        }
+      }
+    },
+    {
+      "id": "mission_7",
+      "title": "The Scrambled Hold",
+      "starting_cwd": "/ship/hold",
+      "starting_clue": "The Kraken scrambled all the treasure pieces in the ship's hold! Move them all into the chest with 'mv' to restore order!",
+      "intro_dialogue": {
+        "npc": "Old Pete",
+        "text": "The Kraken scrambled all the treasure pieces in the ship's hold! Move them all into the chest — use 'mv piece_sword.txt chest/piece_sword.txt' and so on for each piece!"
+      },
+      "objectives": [
+        { "command": "mv", "path": "/ship/hold/chest/piece_sword.txt" },
+        { "command": "mv", "path": "/ship/hold/chest/piece_compass.txt" },
+        { "command": "mv", "path": "/ship/hold/chest/piece_map.txt" }
+      ],
+      "objective_hints": [
+        "One piece secured! Move the next — 'mv piece_compass.txt chest/piece_compass.txt'!",
+        "Two pieces in the chest! One more — 'mv piece_map.txt chest/piece_map.txt'!",
+        "All pieces secured! The hold is restored!"
+      ],
+      "success_message": "Order restored! All treasure pieces are safe in the chest!",
+      "bug_taunt": "Organized the hold?! The Kraken HATES organization! — The Kraken",
+      "treasure": "Map Piece 7: Hidden under piece_map.txt. The bilge needs cleaning next — but be careful what ye delete!",
+      "unlocks": ["mission_8"],
+      "filesystem": {
+        "/ship": { "type": "dir" },
+        "/ship/hold": { "type": "dir" },
+        "/ship/hold/chest": { "type": "dir" },
+        "/ship/hold/piece_sword.txt": {
+          "type": "file",
+          "content": "A fine sword piece. Move me into the chest!"
+        },
+        "/ship/hold/piece_compass.txt": {
+          "type": "file",
+          "content": "A compass piece. Move me into the chest!"
+        },
+        "/ship/hold/piece_map.txt": {
+          "type": "file",
+          "content": "A map piece. Move me into the chest! Map Piece 7 is yours!"
+        },
+        "/ship/hold/rats_nest.txt": {
+          "type": "file",
+          "content": "Just rats. Lots of rats. Do not move the rats."
+        }
+      }
+    },
+    {
+      "id": "mission_8",
+      "title": "The Bilge",
+      "starting_cwd": "/ship/bilge",
+      "starting_clue": "The bilge is full of junk! Delete the rotten files with 'rm' — but leave the treasure_key.txt alone! Read it first!",
+      "intro_dialogue": {
+        "npc": "Bilge Monster",
+        "text": "RAAARRR! I be the Bilge Monster! Feed me the junk files! Delete rotten_fish.txt, broken_oar.txt, and soggy_map.txt — but leave the treasure_key.txt alone! That one is important!"
+      },
+      "objectives": [
+        { "command": "rm", "path": "/ship/bilge/rotten_fish.txt" },
+        { "command": "rm", "path": "/ship/bilge/broken_oar.txt" },
+        { "command": "rm", "path": "/ship/bilge/soggy_map.txt" }
+      ],
+      "objective_hints": [
+        "BURP! Tasty! Now delete broken_oar.txt with 'rm broken_oar.txt'!",
+        "BURP! More! Now delete soggy_map.txt with 'rm soggy_map.txt'!",
+        "BURRRRP! The bilge is clean! The Bilge Monster is satisfied!"
+      ],
+      "success_message": "The bilge is spotless! The Bilge Monster is delighted!",
+      "bug_taunt": "BURP. The Bilge Monster ate well today. But the vault still awaits! — The Kraken",
+      "treasure": "Map Piece 8: Scratched into the bilge floor. The mountain peak holds the final clues — use 'find' to discover them!",
+      "unlocks": ["mission_9"],
+      "filesystem": {
+        "/ship/bilge": { "type": "dir" },
+        "/ship/bilge/rotten_fish.txt": {
+          "type": "file",
+          "content": "Smells terrible. The Bilge Monster wants this gone. Delete it with 'rm rotten_fish.txt'."
+        },
+        "/ship/bilge/broken_oar.txt": {
+          "type": "file",
+          "content": "Snapped in half. Useless. Delete it with 'rm broken_oar.txt'."
+        },
+        "/ship/bilge/soggy_map.txt": {
+          "type": "file",
+          "content": "Completely waterlogged. Unreadable. Delete it with 'rm soggy_map.txt'."
+        },
+        "/ship/bilge/treasure_key.txt": {
+          "type": "file",
+          "content": "THE KEY TO THE VAULT! Do NOT delete me! I am very important! The vault is at /vault/root_treasure.txt!"
+        }
+      }
+    },
+    {
+      "id": "mission_9",
+      "title": "The Spyglass Plateau",
+      "starting_cwd": "/mountain",
+      "starting_clue": "Captain Kernel's spyglass can spot anything! Use 'find' to search the mountain, then 'cat' the clue ye discover!",
+      "intro_dialogue": {
+        "npc": "Old Pete",
+        "text": "Captain Kernel's spyglass can spot anything on the island! Use 'find /mountain' to locate the hidden chest, then 'cat' the vault clue inside it!"
+      },
       "objectives": [
         { "command": "find", "path": "/mountain" },
-        { "command": "cat", "path": "/mountain/peak/chest" }
+        { "command": "cat", "path": "/mountain/peak/deep_cave/vault_clue.txt" }
       ],
-      "success_message": "TREASURE FOUND! You are a true pirate master!",
-      "treasure": "A chest overflowing with gold doubloons! You've completed Skull Island!",
-      "unlocks": [],
+      "objective_hints": [
+        "Ye spotted it with the spyglass! The vault clue be at /mountain/peak/deep_cave/vault_clue.txt — read it with 'cat'!",
+        "The final path is revealed! To the vault!"
+      ],
+      "success_message": "The final clue is found! The vault awaits!",
+      "bug_taunt": "NOOO! Ye found the spyglass path! There's only ONE piece left — and I'll be waiting! — The Kraken",
+      "treasure": "Map Piece 9: The vault is at /vault/root_treasure.txt. This is it — the final treasure!",
+      "unlocks": ["mission_10"],
       "filesystem": {
         "/mountain": { "type": "dir" },
-        "/mountain/path": { "type": "dir" },
+        "/mountain/base": { "type": "dir" },
+        "/mountain/forest": { "type": "dir" },
         "/mountain/peak": { "type": "dir" },
-        "/mountain/peak/chest": {
+        "/mountain/peak/deep_cave": { "type": "dir" },
+        "/mountain/base/sign.txt": {
           "type": "file",
-          "content": "*** TREASURE CHEST ***\nGold doubloons: 1000\nYou are a true pirate! Arr!"
+          "content": "The peak is up! Keep climbing!"
         },
-        "/mountain/path/sign.txt": {
+        "/mountain/forest/berry_bush.txt": {
           "type": "file",
-          "content": "This way to the peak! Watch for the chest..."
+          "content": "Tasty berries. Not treasure. Skelly Cat approves though."
+        },
+        "/mountain/loose_rocks.txt": {
+          "type": "file",
+          "content": "These rocks say nothing useful. Very disappointing rocks."
+        },
+        "/mountain/peak/deep_cave/vault_clue.txt": {
+          "type": "file",
+          "content": "Final Map Piece: The vault is at /vault/root_treasure.txt — ye are SO close, brave pirate!"
+        }
+      }
+    },
+    {
+      "id": "mission_10",
+      "title": "The Root Vault",
+      "starting_cwd": "/vault",
+      "starting_clue": "This be it, young pirate! The Root Vault — heart of Skull Island. Read yer hard-earned treasure with 'cat root_treasure.txt'!",
+      "intro_dialogue": {
+        "npc": "Old Pete",
+        "text": "This be it, young pirate! The Root Vault — the heart of Skull Island. The Kraken guards it no longer. Read yer hard-earned treasure with 'cat root_treasure.txt'!"
+      },
+      "objectives": [
+        { "command": "cat", "path": "/vault/root_treasure.txt" }
+      ],
+      "objective_hints": [
+        "SKULL ISLAND CONQUERED! You are a true Pirate Master!"
+      ],
+      "success_message": "SKULL ISLAND CONQUERED! You are a true Pirate Master!",
+      "bug_taunt": "",
+      "treasure": "*** TREASURE FOUND ***\n\nCONGRATULATIONS, BRAVE PIRATE!\n\nYou have navigated every path on Skull Island,\nrevealed every hidden map piece,\nand outsmarted The Kraken at every turn.\n\nThe Root Treasure is YOURS.\n\n— Captain Kernel, from beyond the sea\n\nP.S. Skelly found his butt.\n     Skelly Cat found her fur.\n     The Kraken is very embarrassed.\n     All is well on Skull Island.",
+      "unlocks": [],
+      "filesystem": {
+        "/vault": { "type": "dir" },
+        "/vault/root_treasure.txt": {
+          "type": "file",
+          "content": "*** TREASURE FOUND ***\n\nCONGRATULATIONS, BRAVE PIRATE!\n\nYou have navigated every path on Skull Island,\nrevealed every hidden map piece,\nand outsmarted The Kraken at every turn.\n\nThe Root Treasure is YOURS.\n\n— Captain Kernel, from beyond the sea\n\nP.S. Skelly found his butt.\n     Skelly Cat found her fur.\n     The Kraken is very embarrassed.\n     All is well on Skull Island."
+        },
+        "/vault/krakens_diary.txt": {
+          "type": "file",
+          "content": "Day 1: Stole a skeleton's butt. Felt bad about it immediately.\nDay 2: Scattered some maps. Classic Kraken stuff.\nDay 3: A pirate is getting very close. Beginning to regret everything.\nDay 4: The pirate found all my hiding spots. I am very embarrassed.\nDay 5: Returned the butt. And the fur. It was the right thing to do."
+        },
+        "/vault/skellys_note.txt": {
+          "type": "file",
+          "content": "I FOUND IT! My butt is back! BEST DAY EVER! — Skelly 💀 (no longer buttless)"
         }
       }
     }

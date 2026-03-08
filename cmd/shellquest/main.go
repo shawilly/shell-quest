@@ -20,11 +20,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer database.Close()
-
 	model := tui.NewStartupModel(database)
 	p := tea.NewProgram(model, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
+	}
+	if err := database.Close(); err != nil {
+		log.Println("close db:", err)
 	}
 }

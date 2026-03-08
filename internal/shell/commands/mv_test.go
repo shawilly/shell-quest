@@ -9,7 +9,7 @@ import (
 
 func TestMv_MovesFile(t *testing.T) {
 	fs := shell.NewFS()
-	fs.WriteFile("/src.txt", "hi", false)
+	_ = fs.WriteFile("/src.txt", "hi", false)
 	cmd := commands.NewMv()
 	result := cmd.Run([]string{"src.txt", "dst.txt"}, "/", fs)
 	if result.Error != "" {

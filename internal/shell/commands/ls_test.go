@@ -10,9 +10,9 @@ import (
 
 func TestLs_ListsCurrentDir(t *testing.T) {
 	fs := shell.NewFS()
-	fs.Mkdir("/island", false)
-	fs.Mkdir("/island/cave", false)
-	fs.WriteFile("/island/note.txt", "hello", false)
+	_ = fs.Mkdir("/island", false)
+	_ = fs.Mkdir("/island/cave", false)
+	_ = fs.WriteFile("/island/note.txt", "hello", false)
 
 	cmd := commands.NewLs()
 	result := cmd.Run(nil, "/island", fs)
@@ -26,9 +26,9 @@ func TestLs_ListsCurrentDir(t *testing.T) {
 
 func TestLs_HidesHiddenFiles(t *testing.T) {
 	fs := shell.NewFS()
-	fs.Mkdir("/island", false)
-	fs.WriteFile("/island/.secret", "shh", true)
-	fs.WriteFile("/island/visible.txt", "hi", false)
+	_ = fs.Mkdir("/island", false)
+	_ = fs.WriteFile("/island/.secret", "shh", true)
+	_ = fs.WriteFile("/island/visible.txt", "hi", false)
 
 	cmd := commands.NewLs()
 	result := cmd.Run(nil, "/island", fs)
@@ -39,8 +39,8 @@ func TestLs_HidesHiddenFiles(t *testing.T) {
 
 func TestLs_WithDashA_ShowsHidden(t *testing.T) {
 	fs := shell.NewFS()
-	fs.Mkdir("/island", false)
-	fs.WriteFile("/island/.secret", "shh", true)
+	_ = fs.Mkdir("/island", false)
+	_ = fs.WriteFile("/island/.secret", "shh", true)
 
 	cmd := commands.NewLs()
 	result := cmd.Run([]string{"-a"}, "/island", fs)

@@ -1,2 +1,5 @@
 start:
-	go run ./cmd/shellquest
+	go build ./cmd/shellquest/ && go run ./cmd/shellquest
+
+test:
+	go test -v ./...

@@ -2,11 +2,12 @@ package shell
 
 // Result is the output of a command execution.
 type Result struct {
-	Output string
-	NewCWD string
-	Error  string
-	Event  *Event
-	Clear  bool
+	Output    string
+	NewCWD    string
+	Error     string
+	Event     *Event
+	Clear     bool
+	ExitLevel bool
 }
 
 // Event is emitted when a command triggers a game narrative event.

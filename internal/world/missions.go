@@ -45,6 +45,17 @@ func (r *MissionRunner) HandleEvent(e *shell.Event) bool {
 	return false
 }
 
+// CurrentHint returns the hint for the objective that just completed.
+// Call after HandleEvent returns true.
+func (r *MissionRunner) CurrentHint() string {
+	idx := r.currentIdx - 1
+	hints := r.mission.ObjectiveHints
+	if idx >= 0 && idx < len(hints) {
+		return hints[idx]
+	}
+	return ""
+}
+
 // Mission returns the mission this runner is tracking.
 func (r *MissionRunner) Mission() Mission {
 	return r.mission

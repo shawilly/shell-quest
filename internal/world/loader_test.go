@@ -36,9 +36,35 @@ func TestLoadWorld_MissionHasFilesystem(t *testing.T) {
 	if len(m.Filesystem) == 0 {
 		t.Error("expected filesystem entries in mission 1")
 	}
-	entry, ok := m.Filesystem["/island"]
+	entry, ok := m.Filesystem["/docks"]
 	if !ok || entry.Type != "dir" {
-		t.Errorf("expected /island to be a dir: %+v", entry)
+		t.Errorf("expected /docks to be a dir: %+v", entry)
+	}
+}
+
+func TestLoadWorld_MissionNarrativeFields(t *testing.T) {
+	w, _ := world.LoadWorld("skull_island")
+	m := w.Missions[0]
+	if m.IntroDialogue == nil {
+		t.Fatal("expected intro_dialogue on mission 1")
+	}
+	if m.IntroDialogue.NPC != "Old Pete" {
+		t.Errorf("expected NPC 'Old Pete', got %q", m.IntroDialogue.NPC)
+	}
+	if m.StartingCWD != "/docks" {
+		t.Errorf("expected starting_cwd '/docks', got %q", m.StartingCWD)
+	}
+	if len(m.ObjectiveHints) == 0 {
+		t.Error("expected objective_hints on mission 1")
+	}
+}
+
+func TestMissionRunner_CurrentHint(t *testing.T) {
+	w, _ := world.LoadWorld("skull_island")
+	runner := world.NewMissionRunner(w.Missions[0])
+	// No hint before any objective completed
+	if runner.CurrentHint() != "" {
+		t.Errorf("expected empty hint before first objective, got %q", runner.CurrentHint())
 	}
 }
 

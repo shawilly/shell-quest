@@ -26,7 +26,7 @@ func (d *DB) ListPlayers() ([]*Player, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var players []*Player
 	for rows.Next() {
 		p := &Player{}

@@ -41,9 +41,15 @@ func TestStat_MissingPath_Errors(t *testing.T) {
 
 func TestListDir(t *testing.T) {
 	fs := shell.NewFS()
-	fs.Mkdir("/island", false)
-	fs.Mkdir("/island/cave", false)
-	fs.WriteFile("/island/note.txt", "hello", false)
+	if err := fs.Mkdir("/island", false); err != nil {
+		t.Fatal(err)
+	}
+	if err := fs.Mkdir("/island/cave", false); err != nil {
+		t.Fatal(err)
+	}
+	if err := fs.WriteFile("/island/note.txt", "hello", false); err != nil {
+		t.Fatal(err)
+	}
 
 	entries, err := fs.ListDir("/island")
 	if err != nil {
@@ -56,9 +62,15 @@ func TestListDir(t *testing.T) {
 
 func TestListDir_HiddenFilesNotShownByDefault(t *testing.T) {
 	fs := shell.NewFS()
-	fs.Mkdir("/island", false)
-	fs.WriteFile("/island/.secret", "shh", true)
-	fs.WriteFile("/island/visible.txt", "hi", false)
+	if err := fs.Mkdir("/island", false); err != nil {
+		t.Fatal(err)
+	}
+	if err := fs.WriteFile("/island/.secret", "shh", true); err != nil {
+		t.Fatal(err)
+	}
+	if err := fs.WriteFile("/island/visible.txt", "hi", false); err != nil {
+		t.Fatal(err)
+	}
 
 	entries, err := fs.ListDir("/island")
 	if err != nil {
@@ -71,9 +83,9 @@ func TestListDir_HiddenFilesNotShownByDefault(t *testing.T) {
 
 func TestListDirAll_ShowsHidden(t *testing.T) {
 	fs := shell.NewFS()
-	fs.Mkdir("/island", false)
-	fs.WriteFile("/island/.secret", "shh", true)
-	fs.WriteFile("/island/visible.txt", "hi", false)
+	_ = fs.Mkdir("/island", false)
+	_ = fs.WriteFile("/island/.secret", "shh", true)
+	_ = fs.WriteFile("/island/visible.txt", "hi", false)
 
 	entries, err := fs.ListDirAll("/island")
 	if err != nil {
@@ -86,8 +98,8 @@ func TestListDirAll_ShowsHidden(t *testing.T) {
 
 func TestRemove_File(t *testing.T) {
 	fs := shell.NewFS()
-	fs.Mkdir("/island", false)
-	fs.WriteFile("/island/note.txt", "hi", false)
+	_ = fs.Mkdir("/island", false)
+	_ = fs.WriteFile("/island/note.txt", "hi", false)
 	if err := fs.Remove("/island/note.txt"); err != nil {
 		t.Fatal(err)
 	}
@@ -99,9 +111,9 @@ func TestRemove_File(t *testing.T) {
 
 func TestCopy_File(t *testing.T) {
 	fs := shell.NewFS()
-	fs.Mkdir("/a", false)
-	fs.Mkdir("/b", false)
-	fs.WriteFile("/a/file.txt", "content", false)
+	_ = fs.Mkdir("/a", false)
+	_ = fs.Mkdir("/b", false)
+	_ = fs.WriteFile("/a/file.txt", "content", false)
 	if err := fs.Copy("/a/file.txt", "/b/file.txt"); err != nil {
 		t.Fatal(err)
 	}
@@ -116,9 +128,9 @@ func TestCopy_File(t *testing.T) {
 
 func TestMove_File(t *testing.T) {
 	fs := shell.NewFS()
-	fs.Mkdir("/a", false)
-	fs.Mkdir("/b", false)
-	fs.WriteFile("/a/file.txt", "content", false)
+	_ = fs.Mkdir("/a", false)
+	_ = fs.Mkdir("/b", false)
+	_ = fs.WriteFile("/a/file.txt", "content", false)
 	if err := fs.Move("/a/file.txt", "/b/file.txt"); err != nil {
 		t.Fatal(err)
 	}
@@ -132,10 +144,10 @@ func TestMove_File(t *testing.T) {
 
 func TestFS_Serialize_Deserialize(t *testing.T) {
 	fs := shell.NewFS()
-	fs.Mkdir("/island", false)
-	fs.Mkdir("/island/cave", false)
-	fs.WriteFile("/island/cave/note.txt", "hello pirate", false)
-	fs.WriteFile("/island/cave/.secret", "hidden treasure", true)
+	_ = fs.Mkdir("/island", false)
+	_ = fs.Mkdir("/island/cave", false)
+	_ = fs.WriteFile("/island/cave/note.txt", "hello pirate", false)
+	_ = fs.WriteFile("/island/cave/.secret", "hidden treasure", true)
 
 	json, err := fs.Serialize()
 	if err != nil {

@@ -9,8 +9,8 @@ import (
 
 func TestCd_ValidDir(t *testing.T) {
 	fs := shell.NewFS()
-	fs.Mkdir("/island", false)
-	fs.Mkdir("/island/cave", false)
+	_ = fs.Mkdir("/island", false)
+	_ = fs.Mkdir("/island/cave", false)
 
 	cmd := commands.NewCd()
 	result := cmd.Run([]string{"cave"}, "/island", fs)
@@ -24,7 +24,7 @@ func TestCd_ValidDir(t *testing.T) {
 
 func TestCd_DotDot(t *testing.T) {
 	fs := shell.NewFS()
-	fs.Mkdir("/island", false)
+	_ = fs.Mkdir("/island", false)
 	cmd := commands.NewCd()
 	result := cmd.Run([]string{".."}, "/island", fs)
 	if result.NewCWD != "/" {
@@ -43,7 +43,7 @@ func TestCd_NonexistentDir_Errors(t *testing.T) {
 
 func TestCd_FileNotDir_Errors(t *testing.T) {
 	fs := shell.NewFS()
-	fs.WriteFile("/note.txt", "hi", false)
+	_ = fs.WriteFile("/note.txt", "hi", false)
 	cmd := commands.NewCd()
 	result := cmd.Run([]string{"note.txt"}, "/", fs)
 	if result.Error == "" {

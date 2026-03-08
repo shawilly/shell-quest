@@ -9,7 +9,7 @@ import (
 
 func TestCp_CopiesFile(t *testing.T) {
 	fs := shell.NewFS()
-	fs.WriteFile("/src.txt", "hello", false)
+	_ = fs.WriteFile("/src.txt", "hello", false)
 	cmd := commands.NewCp()
 	result := cmd.Run([]string{"src.txt", "dst.txt"}, "/", fs)
 	if result.Error != "" {

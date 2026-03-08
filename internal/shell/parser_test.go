@@ -41,9 +41,9 @@ func TestParse_Redirect(t *testing.T) {
 
 func TestParse_Glob_Expands(t *testing.T) {
 	fs := shell.NewFS()
-	fs.WriteFile("/island/cave.txt", "", false)
-	fs.WriteFile("/island/note.txt", "", false)
-	fs.WriteFile("/island/readme.md", "", false)
+	_ = fs.WriteFile("/island/cave.txt", "", false)
+	_ = fs.WriteFile("/island/note.txt", "", false)
+	_ = fs.WriteFile("/island/readme.md", "", false)
 	pipeline := shell.Parse("cat *.txt", "/island", fs)
 	if len(pipeline) != 1 {
 		t.Fatalf("expected 1 command, got %d", len(pipeline))

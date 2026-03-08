@@ -10,7 +10,7 @@ import (
 
 func TestGrep_FindsMatch(t *testing.T) {
 	fs := shell.NewFS()
-	fs.WriteFile("/clue.txt", "line one\ntreasure is here\nline three", false)
+	_ = fs.WriteFile("/clue.txt", "line one\ntreasure is here\nline three", false)
 	cmd := commands.NewGrep()
 	result := cmd.Run([]string{"treasure", "clue.txt"}, "/", fs)
 	if result.Error != "" {
@@ -23,7 +23,7 @@ func TestGrep_FindsMatch(t *testing.T) {
 
 func TestGrep_NoMatch(t *testing.T) {
 	fs := shell.NewFS()
-	fs.WriteFile("/file.txt", "nothing here", false)
+	_ = fs.WriteFile("/file.txt", "nothing here", false)
 	cmd := commands.NewGrep()
 	result := cmd.Run([]string{"missing", "file.txt"}, "/", fs)
 	if !strings.Contains(result.Output, "no matches") {

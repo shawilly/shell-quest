@@ -54,7 +54,7 @@ func (e *Executor) Execute(input, cwd string) Result {
 		// Handle redirect
 		if pc.RedirectTo != "" {
 			p := ResolvePath(cwd, pc.RedirectTo)
-			e.fs.WriteFile(p, lastResult.Output, false)
+			_ = e.fs.WriteFile(p, lastResult.Output, false)
 			lastResult.Output = ""
 		}
 		lastOutput = lastResult.Output

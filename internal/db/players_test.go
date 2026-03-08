@@ -13,7 +13,7 @@ func testDB(t *testing.T) *db.DB {
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
-	t.Cleanup(func() { d.Close() })
+	t.Cleanup(func() { _ = d.Close() })
 	return d
 }
 
@@ -34,7 +34,9 @@ func TestListPlayers_EmptyThenOne(t *testing.T) {
 	if err != nil || len(players) != 0 {
 		t.Fatalf("expected empty list, got %v %v", players, err)
 	}
-	d.CreatePlayer("Sam", "explorer")
+	if _, err := d.CreatePlayer("Sam", "explorer"); err != nil {
+		t.Fatal(err)
+	}
 	players, err = d.ListPlayers()
 	if err != nil || len(players) != 1 {
 		t.Fatalf("expected 1 player, got %v %v", players, err)

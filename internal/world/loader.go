@@ -24,16 +24,26 @@ type Objective struct {
 	Path    string `json:"path"`
 }
 
+// NPC holds an NPC name and their dialogue text.
+type NPC struct {
+	NPC  string `json:"npc"`
+	Text string `json:"text"`
+}
+
 // Mission represents a single treasure hunt mission.
 type Mission struct {
 	ID             string              `json:"id"`
 	Title          string              `json:"title"`
 	StartingClue   string              `json:"starting_clue"`
+	StartingCWD    string              `json:"starting_cwd,omitempty"`
 	Objectives     []Objective         `json:"objectives"`
 	SuccessMessage string              `json:"success_message"`
 	Treasure       string              `json:"treasure"`
 	Unlocks        []string            `json:"unlocks"`
 	Filesystem     map[string]*FSEntry `json:"filesystem"`
+	IntroDialogue  *NPC                `json:"intro_dialogue,omitempty"`
+	ObjectiveHints []string            `json:"objective_hints,omitempty"`
+	BugTaunt       string              `json:"bug_taunt,omitempty"`
 }
 
 // World represents a game world containing multiple missions.

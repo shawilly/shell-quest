@@ -13,7 +13,7 @@ func TestOpen_CreatesSchema(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
-	defer d.Close()
+	defer func() { _ = d.Close() }()
 
 	// Verify tables exist by querying them
 	tables := []string{"players", "progress", "world_state", "history"}

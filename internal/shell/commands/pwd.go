@@ -11,5 +11,5 @@ func (p *Pwd) Aliases() []string { return nil }
 func (p *Pwd) Tier() string      { return "beginner" }
 
 func (p *Pwd) Run(args []string, cwd string, fs *shell.FS) shell.Result {
-	return shell.Result{Output: cwd}
+	return shell.Result{Output: cwd, Event: &shell.Event{Type: "pwd", Path: cwd}}
 }
