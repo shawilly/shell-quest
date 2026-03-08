@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/shanewilliams/shell-quest/internal/db"
 	"github.com/shanewilliams/shell-quest/internal/shell"
@@ -42,9 +43,9 @@ type Model struct {
 	height     int
 
 	// shell pane
-	outputLines []string
-	inputBuf    string
-	maxLines    int
+	shellInput textinput.Model
+	shellVP    viewport.Model
+	shellLines []string // raw lines for rebuilding viewport on resize
 
 	// story pane
 	clueText  string
@@ -74,9 +75,12 @@ func NewGameModel(d *db.DB, player *db.Player, fs *shell.FS, ex *shell.Executor,
 		cwd:       startCWD,
 		clueText:  clue,
 		storyText: "Welcome to Skull Island, young pirate! Arr!",
-		maxLines:  20,
 	}
+	m.shellInput = newShellInput()
+	m.shellInput.Focus()
+	m.shellVP = newShellViewport(80, 20)
 	m.mathInput = newMathInput()
+	m.nameInput = newNameInput()
 	return m
 }
 
@@ -87,10 +91,12 @@ func NewStartupModel(d *db.DB) Model {
 		state:    StateWelcome,
 		db:       d,
 		profiles: players,
-		maxLines: 20,
 	}
 	m.nameInput = newNameInput()
 	m.mathInput = newMathInput()
+	m.shellInput = newShellInput()
+	m.shellInput.Focus()
+	m.shellVP = newShellViewport(80, 20)
 	return m
 }
 
@@ -103,6 +109,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		rightWidth := msg.Width - msg.Width/2
+		shellInner := rightWidth - 8
+		if shellInner < 10 {
+			shellInner = 10
+		}
+		vpHeight := msg.Height - 8
+		if vpHeight < 4 {
+			vpHeight = 4
+		}
+		m.shellVP = viewport.New(shellInner, vpHeight)
+		m.shellVP.SetContent(strings.Join(m.shellLines, "\n"))
 	case tea.KeyMsg:
 		switch m.state {
 		case StateWelcome:
@@ -170,14 +187,10 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.parentUnlocked = false
 	case tea.KeyEnter:
 		return m.submitCommand()
-	case tea.KeyBackspace:
-		if len(m.inputBuf) > 0 {
-			m.inputBuf = m.inputBuf[:len(m.inputBuf)-1]
-		}
-	case tea.KeyRunes:
-		m.inputBuf += string(msg.Runes)
-	case tea.KeySpace:
-		m.inputBuf += " "
+	default:
+		var cmd tea.Cmd
+		m.shellInput, cmd = m.shellInput.Update(msg)
+		return m, cmd
 	}
 	return m, nil
 }
@@ -349,7 +362,8 @@ func (m Model) startGame() (Model, tea.Cmd) {
 	m.clueText = mission.StartingClue
 	m.storyText = missionIntro(mission)
 	m.state = StateGame
-	m.outputLines = nil
+	m.shellLines = nil
+	m.shellVP.SetContent("")
 	m.failCount = 0
 	return m, nil
 }
@@ -363,13 +377,13 @@ func missionIntro(mission world.Mission) string {
 }
 
 func (m Model) submitCommand() (tea.Model, tea.Cmd) {
-	input := strings.TrimSpace(m.inputBuf)
-	m.inputBuf = ""
+	input := strings.TrimSpace(m.shellInput.Value())
+	m.shellInput.SetValue("")
 	if input == "" {
 		return m, nil
 	}
 
-	m.outputLines = append(m.outputLines, PromptStyle.Render("$ ")+input)
+	m.appendOutput(PromptStyle.Render("$ ") + input)
 	result := m.executor.Execute(input, m.cwd)
 
 	switch {
@@ -378,14 +392,15 @@ func (m Model) submitCommand() (tea.Model, tea.Cmd) {
 		m.state = StateWelcome
 		return m, nil
 	case result.Clear:
-		m.outputLines = nil
+		m.shellLines = nil
+		m.shellVP.SetContent("")
 		return m, nil
 	case result.Error != "":
-		m.outputLines = append(m.outputLines, ErrorStyle.Render(result.Error))
+		m.appendOutput(ErrorStyle.Render(result.Error))
 		m.failCount++
 	default:
 		for _, line := range strings.Split(result.Output, "\n") {
-			m.outputLines = append(m.outputLines, OutputStyle.Render(line))
+			m.appendOutput(OutputStyle.Render(line))
 		}
 		if result.NewCWD != "" {
 			m.cwd = result.NewCWD
@@ -400,10 +415,6 @@ func (m Model) submitCommand() (tea.Model, tea.Cmd) {
 			m.storyText = "Psst! Try using '" + obj.Command + "' to progress..."
 			m.failCount = 0
 		}
-	}
-
-	if len(m.outputLines) > m.maxLines {
-		m.outputLines = m.outputLines[len(m.outputLines)-m.maxLines:]
 	}
 
 	return m, nil
@@ -429,9 +440,9 @@ func (m Model) applyMissionEvent(result shell.Result) Model {
 	}
 
 	completed := m.runner.Mission()
-	m.outputLines = append(m.outputLines, SuccessStyle.Render(completed.SuccessMessage))
+	m.appendOutput(SuccessStyle.Render(completed.SuccessMessage))
 	if completed.BugTaunt != "" {
-		m.outputLines = append(m.outputLines, SuccessStyle.Render(completed.BugTaunt))
+		m.appendOutput(SuccessStyle.Render(completed.BugTaunt))
 	}
 
 	nextIdx := m.missionIdx + 1
@@ -473,8 +484,14 @@ func (m Model) loadMission(idx int) Model {
 	if mission.StartingCWD != "" {
 		m.cwd = mission.StartingCWD
 	}
-	m.outputLines = append(m.outputLines, SuccessStyle.Render("=== New Mission: "+mission.Title+" ==="))
+	m.appendOutput(SuccessStyle.Render("=== New Mission: " + mission.Title + " ==="))
 	return m
+}
+
+func (m *Model) appendOutput(line string) {
+	m.shellLines = append(m.shellLines, line)
+	m.shellVP.SetContent(strings.Join(m.shellLines, "\n"))
+	m.shellVP.GotoBottom()
 }
 
 // RegisterCommands registers all commands with the executor based on player tier.
