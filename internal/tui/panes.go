@@ -27,22 +27,6 @@ func (m Model) adventureLogView() string {
 	return b.String()
 }
 
-func (m Model) parentModeView() string {
-	var b strings.Builder
-	b.WriteString(TitleStyle.Render("PARENT MODE") + "\n\n")
-
-	if !m.parentUnlocked {
-		b.WriteString(fmt.Sprintf("What is %d + %d?\n\n", m.mathA, m.mathB))
-		b.WriteString("> " + m.mathAnswer + "_\n\n")
-		b.WriteString("Press ESC to cancel.")
-	} else {
-		b.WriteString(SuccessStyle.Render("Access granted!") + "\n\n")
-		b.WriteString("Q - Quit game\n")
-		b.WriteString("ESC - Return to game\n")
-	}
-	return b.String()
-}
-
 func (m Model) gameView() string {
 	if m.width == 0 {
 		// Not yet sized — return minimal view

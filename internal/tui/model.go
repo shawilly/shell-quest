@@ -57,14 +57,14 @@ type Model struct {
 	nameInput   textinput.Model
 
 	// parent mode
-	mathAnswer     string
+	mathInput      textinput.Model
 	mathA, mathB   int
 	parentUnlocked bool
 }
 
 // NewGameModel creates a model ready to play a mission.
 func NewGameModel(d *db.DB, player *db.Player, fs *shell.FS, ex *shell.Executor, runner *world.MissionRunner, startCWD, clue string) Model {
-	return Model{
+	m := Model{
 		state:     StateGame,
 		db:        d,
 		player:    player,
@@ -76,6 +76,8 @@ func NewGameModel(d *db.DB, player *db.Player, fs *shell.FS, ex *shell.Executor,
 		storyText: "Welcome to Skull Island, young pirate! Arr!",
 		maxLines:  20,
 	}
+	m.mathInput = newMathInput()
+	return m
 }
 
 // NewStartupModel creates a model starting at the welcome screen.
@@ -88,6 +90,7 @@ func NewStartupModel(d *db.DB) Model {
 		maxLines: 20,
 	}
 	m.nameInput = newNameInput()
+	m.mathInput = newMathInput()
 	return m
 }
 
@@ -162,7 +165,8 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.state = StateParentMode
 		m.mathA = rand.Intn(10) + 1
 		m.mathB = rand.Intn(10) + 1
-		m.mathAnswer = ""
+		m.mathInput.SetValue("")
+		m.mathInput.Focus()
 		m.parentUnlocked = false
 	case tea.KeyEnter:
 		return m.submitCommand()
@@ -211,21 +215,17 @@ func (m Model) handleParentModeKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.state = StateGame
 	case tea.KeyEnter:
 		expected := fmt.Sprintf("%d", m.mathA+m.mathB)
-		if m.mathAnswer == expected {
+		if m.mathInput.Value() == expected {
 			m.parentUnlocked = true
+			m.mathInput.Blur()
 		} else {
-			m.mathAnswer = ""
+			m.mathInput.SetValue("")
 		}
-	case tea.KeyBackspace:
-		if len(m.mathAnswer) > 0 {
-			m.mathAnswer = m.mathAnswer[:len(m.mathAnswer)-1]
-		}
-	default:
-		if msg.Type == tea.KeyRunes {
-			m.mathAnswer += string(msg.Runes)
-		}
+		return m, nil
 	}
-	return m, nil
+	var cmd tea.Cmd
+	m.mathInput, cmd = m.mathInput.Update(msg)
+	return m, cmd
 }
 
 func (m Model) handleProfileKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
