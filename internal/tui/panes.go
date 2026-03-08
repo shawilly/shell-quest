@@ -3,8 +3,6 @@ package tui
 import (
 	"fmt"
 	"strings"
-
-	"github.com/charmbracelet/lipgloss"
 )
 
 func (m Model) adventureLogView() string {
@@ -24,33 +22,5 @@ func (m Model) adventureLogView() string {
 		}
 	}
 	b.WriteString("\n\nPress ESC or Enter to return to the game.")
-	return b.String()
-}
-
-func (m Model) tierSelectView() string {
-	tiers := []struct {
-		name       string
-		desc       string
-		comingSoon bool
-	}{
-		{"Beginner", "Ages 3-6. Commands: ls, cd, pwd, cat, echo, clear, help", false},
-		{"Explorer", "Ages 6-8. + mkdir, touch, cp, mv, rm, find", true},
-		{"Master", "Ages 8-10. + grep, chmod, man, history, pipes, globs", true},
-	}
-	var b strings.Builder
-	b.WriteString(TitleStyle.Render("Choose Your Difficulty, "+m.nameInput.Value()) + "\n\n")
-	for i, t := range tiers {
-		cursor := "  "
-		if i == m.selectedIdx {
-			cursor = "> "
-		}
-		if t.comingSoon {
-			line := fmt.Sprintf("%s%s  [ Coming Soon ]\n    %s\n\n", cursor, t.name, t.desc)
-			b.WriteString(lipgloss.NewStyle().Faint(true).Render(line))
-		} else {
-			b.WriteString(fmt.Sprintf("%s%s\n    %s\n\n", cursor, t.name, t.desc))
-		}
-	}
-	b.WriteString("Use up/down arrows and Enter to select.")
 	return b.String()
 }

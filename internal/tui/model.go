@@ -55,7 +55,7 @@ type Model struct {
 
 	// profile selection
 	profileList list.Model
-	selectedIdx int
+	tierList    list.Model
 	nameInput   textinput.Model
 
 	// parent mode
@@ -122,6 +122,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.shellVP = viewport.New(shellInner, vpHeight)
 		m.shellVP.SetContent(strings.Join(m.shellLines, "\n"))
 		m.profileList.SetSize(msg.Width-8, msg.Height-8)
+		m.tierList.SetSize(msg.Width-8, msg.Height-8)
 	case tea.KeyMsg:
 		switch m.state {
 		case StateWelcome:
@@ -267,32 +268,24 @@ func (m Model) handleProfileKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleTierKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	tiers := []string{"beginner", "explorer", "master"}
 	switch msg.Type {
 	case tea.KeyCtrlC:
 		return m, tea.Quit
-	case tea.KeyUp:
-		if m.selectedIdx > 0 {
-			m.selectedIdx--
-		}
-	case tea.KeyDown:
-		if m.selectedIdx < len(tiers)-1 {
-			m.selectedIdx++
-		}
 	case tea.KeyEnter:
-		if m.selectedIdx != 0 {
-			// Only Beginner is available; other tiers are coming soon
+		selected, ok := m.tierList.SelectedItem().(tierItem)
+		if !ok || selected.comingSoon {
 			return m, nil
 		}
-		tier := tiers[m.selectedIdx]
-		player, err := m.db.CreatePlayer(strings.TrimSpace(m.nameInput.Value()), tier)
+		player, err := m.db.CreatePlayer(strings.TrimSpace(m.nameInput.Value()), strings.ToLower(selected.name))
 		if err != nil {
 			return m, nil
 		}
 		m.player = player
 		return m.startGame()
 	}
-	return m, nil
+	var cmd tea.Cmd
+	m.tierList, cmd = m.tierList.Update(msg)
+	return m, cmd
 }
 
 func (m Model) handleNameKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -302,7 +295,7 @@ func (m Model) handleNameKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case tea.KeyEnter:
 		if len(strings.TrimSpace(m.nameInput.Value())) > 0 {
 			m.state = StateTierSelect
-			m.selectedIdx = 0
+			m.tierList = newTierList(m.nameInput.Value(), m.width-8, m.height-8)
 			m.nameInput.Blur()
 		}
 		return m, nil
