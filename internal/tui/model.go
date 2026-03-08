@@ -17,6 +17,7 @@ import (
 	"github.com/shanewilliams/shell-quest/internal/shell"
 	"github.com/shanewilliams/shell-quest/internal/shell/commands"
 	"github.com/shanewilliams/shell-quest/internal/world"
+	"go.dalton.dog/bubbleup"
 )
 
 type AppState int
@@ -71,6 +72,9 @@ type Model struct {
 
 	// loading screen
 	spinner spinner.Model
+
+	// toast notifications
+	alert bubbleup.AlertModel
 }
 
 // NewGameModel creates a model ready to play a mission.
@@ -93,6 +97,7 @@ func NewGameModel(d *db.DB, player *db.Player, fs *shell.FS, ex *shell.Executor,
 	m.nameInput = newNameInput()
 	m.spinner = newSpinner()
 	m.hermit = newHermit(14, 60)
+	m.alert = newAlert()
 	return m
 }
 
@@ -111,14 +116,23 @@ func NewStartupModel(d *db.DB) Model {
 	m.profileList = newProfileList(players, 40, 20)
 	m.spinner = newSpinner()
 	m.hermit = newHermit(14, 60)
+	m.alert = newAlert()
 	return m
 }
 
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(textinput.Blink, m.spinner.Tick)
+	return tea.Batch(textinput.Blink, m.spinner.Tick, m.alert.Init())
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	m2, cmd := m.innerUpdate(msg)
+	model := m2.(Model)
+	outAlert, alertCmd := model.alert.Update(msg)
+	model.alert = outAlert.(bubbleup.AlertModel)
+	return model, tea.Batch(cmd, alertCmd)
+}
+
+func (m Model) innerUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -181,7 +195,8 @@ func (m Model) View() string {
 		m.hermit.SetItems(adventureLogItems(m))
 	}
 	m.hermit.SetView(base)
-	return m.hermit.View()
+	hermitView := m.hermit.View()
+	return m.alert.Render(hermitView)
 }
 
 func (m Model) baseView() string {
@@ -483,25 +498,27 @@ func (m Model) submitCommand() (tea.Model, tea.Cmd) {
 		m.failCount = 0
 	}
 
-	m = m.applyMissionEvent(result)
+	var missionCmd tea.Cmd
+	m, missionCmd = m.applyMissionEvent(result)
 
 	if m.failCount >= 3 && m.runner != nil {
 		if obj := m.runner.CurrentObjective(); obj != nil {
-			m.storyText = "Psst! Try using '" + obj.Command + "' to progress..."
+			hintCmd := m.alert.NewAlertCmd(bubbleup.WarnKey, "Hint: try '"+obj.Command+"'")
 			m.failCount = 0
+			return m, tea.Batch(missionCmd, hintCmd)
 		}
 	}
 
-	return m, nil
+	return m, missionCmd
 }
 
 // applyMissionEvent advances mission state when a command triggers an objective.
-func (m Model) applyMissionEvent(result shell.Result) Model {
+func (m Model) applyMissionEvent(result shell.Result) (Model, tea.Cmd) {
 	if m.runner == nil || result.Event == nil {
-		return m
+		return m, nil
 	}
 	if !m.runner.HandleEvent(result.Event) {
-		return m
+		return m, nil
 	}
 
 	if !m.runner.IsComplete() {
@@ -511,7 +528,7 @@ func (m Model) applyMissionEvent(result shell.Result) Model {
 		if obj := m.runner.CurrentObjective(); obj != nil {
 			m.clueText = "Objective " + string(rune('0'+m.runner.CurrentObjectiveIndex())) + " complete! Keep going..."
 		}
-		return m
+		return m, m.alert.NewAlertCmd(bubbleup.InfoKey, "Objective complete! Keep going...")
 	}
 
 	completed := m.runner.Mission()
@@ -524,10 +541,10 @@ func (m Model) applyMissionEvent(result shell.Result) Model {
 	if m.gameWorld == nil || nextIdx >= len(m.gameWorld.Missions) {
 		m.storyText = completed.Treasure
 		m.clueText = "You've conquered Skull Island! You are a true Pirate Master!"
-		return m
+		return m, m.alert.NewAlertCmd(bubbleup.InfoKey, "Mission complete! You're a true pirate!")
 	}
 
-	return m.loadMission(nextIdx)
+	return m.loadMission(nextIdx), m.alert.NewAlertCmd(bubbleup.InfoKey, "Mission complete! You're a true pirate!")
 }
 
 // loadMission sets up the filesystem and runner for the mission at idx.
