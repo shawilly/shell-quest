@@ -27,28 +27,6 @@ func (m Model) adventureLogView() string {
 	return b.String()
 }
 
-func (m Model) profileSelectView() string {
-	var b strings.Builder
-	b.WriteString(TitleStyle.Render("SHELL QUEST - Choose Your Pirate") + "\n\n")
-
-	for i, p := range m.profiles {
-		cursor := "  "
-		if i == m.selectedIdx {
-			cursor = "> "
-		}
-		b.WriteString(fmt.Sprintf("%s%s (%s)\n", cursor, p.Name, p.Tier))
-	}
-
-	// New profile option
-	cursor := "  "
-	if m.selectedIdx == len(m.profiles) {
-		cursor = "> "
-	}
-	b.WriteString(cursor + "[ New Pirate ]\n")
-	b.WriteString("\nUse up/down arrows and Enter to select.")
-	return b.String()
-}
-
 func (m Model) tierSelectView() string {
 	tiers := []struct {
 		name       string

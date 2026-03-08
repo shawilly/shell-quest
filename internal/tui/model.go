@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -53,7 +54,7 @@ type Model struct {
 	failCount int
 
 	// profile selection
-	profiles    []*db.Player
+	profileList list.Model
 	selectedIdx int
 	nameInput   textinput.Model
 
@@ -88,15 +89,15 @@ func NewGameModel(d *db.DB, player *db.Player, fs *shell.FS, ex *shell.Executor,
 func NewStartupModel(d *db.DB) Model {
 	players, _ := d.ListPlayers()
 	m := Model{
-		state:    StateWelcome,
-		db:       d,
-		profiles: players,
+		state: StateWelcome,
+		db:    d,
 	}
 	m.nameInput = newNameInput()
 	m.mathInput = newMathInput()
 	m.shellInput = newShellInput()
 	m.shellInput.Focus()
 	m.shellVP = newShellViewport(80, 20)
+	m.profileList = newProfileList(players, 40, 20)
 	return m
 }
 
@@ -120,6 +121,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.shellVP = viewport.New(shellInner, vpHeight)
 		m.shellVP.SetContent(strings.Join(m.shellLines, "\n"))
+		m.profileList.SetSize(msg.Width-8, msg.Height-8)
 	case tea.KeyMsg:
 		switch m.state {
 		case StateWelcome:
@@ -242,31 +244,26 @@ func (m Model) handleParentModeKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleProfileKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	count := len(m.profiles) + 1 // +1 for "New Profile"
 	switch msg.Type {
 	case tea.KeyCtrlC:
 		return m, tea.Quit
-	case tea.KeyUp:
-		if m.selectedIdx > 0 {
-			m.selectedIdx--
-		}
-	case tea.KeyDown:
-		if m.selectedIdx < count-1 {
-			m.selectedIdx++
-		}
 	case tea.KeyEnter:
-		if m.selectedIdx == len(m.profiles) {
-			// "New Profile" selected
+		selected, ok := m.profileList.SelectedItem().(playerItem)
+		if !ok {
+			return m, nil
+		}
+		if selected.player == nil {
 			m.state = StateNameInput
 			m.nameInput.SetValue("")
 			m.nameInput.Focus()
-		} else {
-			// Existing profile selected
-			m.player = m.profiles[m.selectedIdx]
-			return m.startGame()
+			return m, nil
 		}
+		m.player = selected.player
+		return m.startGame()
 	}
-	return m, nil
+	var cmd tea.Cmd
+	m.profileList, cmd = m.profileList.Update(msg)
+	return m, cmd
 }
 
 func (m Model) handleTierKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -388,7 +385,8 @@ func (m Model) submitCommand() (tea.Model, tea.Cmd) {
 
 	switch {
 	case result.ExitLevel:
-		m.profiles, _ = m.db.ListPlayers()
+		players, _ := m.db.ListPlayers()
+		m.profileList = newProfileList(players, m.width/2, m.height-4)
 		m.state = StateWelcome
 		return m, nil
 	case result.Clear:
