@@ -22,16 +22,3 @@ func newMathInput() textinput.Model {
 	}
 	return ti
 }
-
-func (m Model) parentModeView() string {
-	if !m.parentUnlocked {
-		return TitleStyle.Render("PARENT MODE") + "\n\n" +
-			fmt.Sprintf("What is %d + %d?\n\n", m.mathA, m.mathB) +
-			m.mathInput.View() + "\n\n" +
-			"Press ESC to cancel."
-	}
-	return TitleStyle.Render("PARENT MODE") + "\n\n" +
-		SuccessStyle.Render("Access granted!") + "\n\n" +
-		"Q - Quit game\n" +
-		"ESC - Return to game"
-}

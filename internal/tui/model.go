@@ -12,6 +12,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	listy "github.com/genekkion/theHermit/list"
 	"github.com/shanewilliams/shell-quest/internal/db"
 	"github.com/shanewilliams/shell-quest/internal/shell"
 	"github.com/shanewilliams/shell-quest/internal/shell/commands"
@@ -26,8 +27,6 @@ const (
 	StateTierSelect
 	StateNameInput
 	StateWelcome
-	StateAdventureLog
-	StateParentMode
 	StateLoading
 )
 
@@ -65,6 +64,11 @@ type Model struct {
 	mathA, mathB   int
 	parentUnlocked bool
 
+	// hermit overlays
+	hermit     listy.Model
+	showLog    bool
+	showParent bool
+
 	// loading screen
 	spinner spinner.Model
 }
@@ -88,6 +92,7 @@ func NewGameModel(d *db.DB, player *db.Player, fs *shell.FS, ex *shell.Executor,
 	m.mathInput = newMathInput()
 	m.nameInput = newNameInput()
 	m.spinner = newSpinner()
+	m.hermit = newHermit(14, 60)
 	return m
 }
 
@@ -105,6 +110,7 @@ func NewStartupModel(d *db.DB) Model {
 	m.shellVP = newShellViewport(80, 20)
 	m.profileList = newProfileList(players, 40, 20)
 	m.spinner = newSpinner()
+	m.hermit = newHermit(14, 60)
 	return m
 }
 
@@ -130,7 +136,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.shellVP.SetContent(strings.Join(m.shellLines, "\n"))
 		m.profileList.SetSize(msg.Width-8, msg.Height-8)
 		m.tierList.SetSize(msg.Width-8, msg.Height-8)
+		m.hermit.SetHeight(msg.Height / 2)
+		m.hermit.SetWidth(msg.Width / 2)
+		// Forward WindowSizeMsg to hermit so it tracks windowWidth/windowHeight
+		// (required for the overlay to render correctly).
+		hermitModel, _ := m.hermit.Update(msg)
+		m.hermit = hermitModel.(listy.Model)
 	case tea.KeyMsg:
+		// Route to overlay handlers first
+		if m.showParent {
+			return m.handleParentModeKey(msg)
+		}
+		if m.showLog {
+			return m.handleAdventureLogKey(msg)
+		}
 		switch m.state {
 		case StateWelcome:
 			return m.handleWelcomeKey(msg)
@@ -142,10 +161,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.handleTierKey(msg)
 		case StateNameInput:
 			return m.handleNameKey(msg)
-		case StateAdventureLog:
-			return m.handleAdventureLogKey(msg)
-		case StateParentMode:
-			return m.handleParentModeKey(msg)
 		case StateLoading:
 			return m.handleLoadingUpdate(msg)
 		}
@@ -158,6 +173,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
+	base := m.baseView()
+	// Update hermit items fresh every frame so dynamic content (e.g. mathInput.View()) stays current.
+	if m.showParent {
+		m.hermit.SetItems(parentModeItems(m))
+	} else if m.showLog {
+		m.hermit.SetItems(adventureLogItems(m))
+	}
+	m.hermit.SetView(base)
+	return m.hermit.View()
+}
+
+func (m Model) baseView() string {
 	switch m.state {
 	case StateWelcome:
 		return m.welcomeView()
@@ -169,10 +196,6 @@ func (m Model) View() string {
 		return m.tierSelectView()
 	case StateNameInput:
 		return m.nameInputView()
-	case StateAdventureLog:
-		return m.adventureLogView()
-	case StateParentMode:
-		return m.parentModeView()
 	case StateLoading:
 		return m.loadingView()
 	default:
@@ -195,9 +218,14 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case tea.KeyCtrlC:
 		return m, tea.Quit
 	case tea.KeyCtrlL:
-		m.state = StateAdventureLog
+		m.showLog = !m.showLog
+		m.hermit.SetIsShown(m.showLog)
+		if !m.showLog {
+			m.shellInput.Focus()
+		}
 	case tea.KeyCtrlP:
-		m.state = StateParentMode
+		m.showParent = true
+		m.hermit.SetIsShown(true)
 		m.mathA = rand.Intn(10) + 1
 		m.mathB = rand.Intn(10) + 1
 		m.mathInput.SetValue("")
@@ -218,9 +246,15 @@ func (m Model) handleAdventureLogKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case tea.KeyCtrlC:
 		return m, tea.Quit
 	case tea.KeyEsc, tea.KeyEnter, tea.KeyCtrlL:
-		m.state = StateGame
+		m.showLog = false
+		m.hermit.SetIsShown(false)
+		m.shellInput.Focus()
+		return m, nil
 	}
-	return m, nil
+	// Forward navigation keys to hermit so up/down scrolls through log items.
+	hermitModel, cmd := m.hermit.Update(msg)
+	m.hermit = hermitModel.(listy.Model)
+	return m, cmd
 }
 
 func (m Model) handleParentModeKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -229,8 +263,10 @@ func (m Model) handleParentModeKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		case tea.KeyCtrlC:
 			return m, tea.Quit
 		case tea.KeyEsc:
-			m.state = StateGame
+			m.showParent = false
+			m.hermit.SetIsShown(false)
 			m.parentUnlocked = false
+			m.shellInput.Focus()
 		case tea.KeyRunes:
 			if msg.String() == "q" {
 				return m, tea.Quit
@@ -243,7 +279,10 @@ func (m Model) handleParentModeKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case tea.KeyCtrlC:
 		return m, tea.Quit
 	case tea.KeyEsc:
-		m.state = StateGame
+		m.showParent = false
+		m.hermit.SetIsShown(false)
+		m.mathInput.Blur()
+		m.shellInput.Focus()
 	case tea.KeyEnter:
 		expected := fmt.Sprintf("%d", m.mathA+m.mathB)
 		if m.mathInput.Value() == expected {
