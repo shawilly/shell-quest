@@ -114,6 +114,7 @@ func NewStartupModel(d *db.DB) Model {
 	m.shellInput.Focus()
 	m.shellVP = newShellViewport(80, 20)
 	m.profileList = newProfileList(players, 40, 20)
+	m.tierList = newTierList("", 40, 20)
 	m.spinner = newSpinner()
 	m.hermit = newHermit(14, 60)
 	m.alert = newAlert()
